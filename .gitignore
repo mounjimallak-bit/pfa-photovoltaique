@@ -1,0 +1,32 @@
+# Données (trop volumineuses pour Git)
+data/
+*.csv
+
+# Modèles entraînés
+models/*.pkl
+models/*.pt
+models/*.h5
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# Docker volumes
+pgdata/
+grafana_data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
