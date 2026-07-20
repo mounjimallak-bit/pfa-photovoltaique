@@ -1,16 +1,10 @@
-# %% [markdown]
-# # Fusion dt1 + dt2 — Rééchantillonnage 5 min
-# dt1 = météo (~1 mesure/s, 2.2 Go)
-# dt2 = électrique + Fault (~1 mesure/7s, 202 Mo)
 
 # %%
 import pandas as pd
 import numpy as np
 
-# %% [markdown]
-# ## 1. Charger dt2 (202 Mo — tient en RAM)
 
-# %%
+
 print("Chargement dt2...")
 dt2 = pd.read_csv("data/dt2_electrical_production_inverter_1_with_faults.csv")
 dt2["time"] = pd.to_datetime(dt2["time"], utc=True)
@@ -18,8 +12,6 @@ dt2 = dt2.set_index("time").sort_index()
 print(f"dt2 : {len(dt2):,} lignes")
 print(f"Période : {dt2.index.min()} → {dt2.index.max()}")
 
-# %% [markdown]
-# ## 2. Charger dt1 (2.2 Go — en chunks)
 
 # %%
 print("Chargement dt1 par chunks...")
@@ -37,11 +29,6 @@ dt1 = pd.concat(chunks)
 print(f"\ndt1 total : {len(dt1):,} lignes")
 print(f"Période : {dt1.index.min()} → {dt1.index.max()}")
 
-# %% [markdown]
-# ## 3. Rééchantillonner à 5 minutes
-# dt1 = 1 mesure/s → ~300 mesures par fenêtre de 5 min
-# dt2 = 1 mesure/7s → ~43 mesures par fenêtre de 5 min
-# On prend la moyenne pour les valeurs numériques
 
 # %%
 print("Rééchantillonnage dt1 à 5 min...")
