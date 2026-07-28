@@ -1,0 +1,74 @@
+{
+  "features_ml": [
+    "DTI",
+    "GTI",
+    "TA",
+    "TPV",
+    "Ia",
+    "Ig",
+    "Pg",
+    "Va",
+    "Vg",
+    "Fg",
+    "ratio_pg_gti",
+    "pg_residual",
+    "va_deviation",
+    "vg_va_ratio"
+  ],
+  "n_features": 14,
+  "colonne_label": "Fault",
+  "regle_label_binaire": "y = (Fault != 0).astype(int)",
+  "format": "parquet",
+  "periode_etude": {
+    "debut": "2021-10-28 12:35:00+00:00",
+    "fin": "2022-05-26 07:40:00+00:00"
+  },
+  "splits": {
+    "train": {
+      "lignes": 8060,
+      "debut": "2021-10-28 12:35:00+00:00",
+      "fin": "2022-02-23 05:10:00+00:00",
+      "anomalies": 392,
+      "taux_anomalies": 0.0486,
+      "types_pannes": {
+        "1.0": 51,
+        "2.1": 36,
+        "2.2": 41,
+        "2.3": 55,
+        "4.0": 209
+      }
+    },
+    "val": {
+      "lignes": 4941,
+      "debut": "2022-02-23 05:15:00+00:00",
+      "fin": "2022-04-11 12:00:00+00:00",
+      "anomalies": 918,
+      "taux_anomalies": 0.1858,
+      "types_pannes": {
+        "3.2": 58,
+        "4.0": 860
+      }
+    },
+    "test": {
+      "lignes": 5056,
+      "debut": "2022-04-11 12:05:00+00:00",
+      "fin": "2022-05-26 07:40:00+00:00",
+      "anomalies": 184,
+      "taux_anomalies": 0.0364,
+      "types_pannes": {
+        "3.1": 73,
+        "3.2": 56,
+        "4.0": 55
+      }
+    }
+  },
+  "train_normal": {
+    "lignes": 7668,
+    "usage": "entrainement Novelty / Autoencoder / LSTM-AE"
+  },
+  "scalers": {
+    "Novelty": "models/dataset/scaler_novelty.joblib",
+    "Outlier": "models/dataset/scaler_outlier.joblib"
+  },
+  "note": "Splits chronologiques sur periode tronquee (arret 7j apres la derniere anomalie). Scaler Novelty ajuste sur train_normal, scaler Outlier sur train complet. Ne JAMAIS reajuster un scaler sur val/test. Serie non continue (jour uniquement, pas 5min) : verifier les trous avant de construire des sequences LSTM."
+}
