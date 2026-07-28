@@ -1,11 +1,10 @@
-# Données (trop volumineuses pour Git)
+# Données brutes et intermédiaires (trop volumineuses pour Git)
 data/
-*.csv
 
-# Modèles entraînés
-models/*.pkl
-models/*.pt
-models/*.h5
+# Modèles entraînés lourds — les artefacts légers de models/ sont versionnés
+*.pt
+*.h5
+*.pkl
 
 # Python
 __pycache__/
@@ -20,7 +19,7 @@ __pycache__/
 .vscode/
 .idea/
 
-# Docker volumes
+# Volumes Docker
 pgdata/
 grafana_data/
 
