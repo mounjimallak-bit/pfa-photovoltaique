@@ -65,7 +65,7 @@ pfa-photovoltaique/
 
 ## Dataset
 
-[[Zenodo — La Réunion PV dataset](https://zenodo.org/records/7358042)](https://zenodo.org/records/7828879?preview_file=00_metadata_variable.jpg) (article PMC9800176)
+[(https://zenodo.org/records/7358042)](https://zenodo.org/records/7828879?preview_file=00_metadata_variable.jpg) (article PMC9800176)
 
 - `dt1` : données météo (GTI, DTI, TA, TPV)
 - `dt2` : données électriques + étiquettes de pannes (ombrage)
