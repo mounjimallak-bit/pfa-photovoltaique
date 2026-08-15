@@ -1,0 +1,31 @@
+{
+  "features": [
+    "GTI",
+    "Pg",
+    "Va",
+    "Vg",
+    "Ia",
+    "TPV"
+  ],
+  "ae": {
+    "n_ensemble": 5,
+    "code_dim": 4,
+    "lr": 0.001,
+    "epochs": 200
+  },
+  "lstm": {
+    "n_ensemble": 5,
+    "seq_len": 6,
+    "units": 64,
+    "code_dim": 16,
+    "lr": 0.003
+  },
+  "fusion": "moyenne des rangs AE+LSTM contre reference val",
+  "seuil_fusion": 0.9460123041320929,
+  "nuit_gap_minutes": 7,
+  "regle": "anomalie si score_fusion >= seuil_fusion",
+  "seuil_critere": "F2 max sur validation (modèle final)",
+  "prauc_val": 0.7234332231714817,
+  "n_ref_ae": 4219,
+  "n_ref_lstm": 4006
+}

@@ -1,0 +1,5 @@
+jeu,n,pr_auc,sd,lift
+10 capteurs (complet),10,0.38,0.2,9.1
+7 sans redondants,7,0.355,0.22,8.5
+6 electriques+irradiance,6,0.661,0.02,15.9
+14 capteurs+engineered,14,0.464,0.01,11.1
