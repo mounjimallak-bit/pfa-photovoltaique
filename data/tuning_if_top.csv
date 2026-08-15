@@ -1,0 +1,10 @@
+strategie,n_estimators,max_samples,contamination,pr_auc,pr_auc_sd,lift
+Novelty,100,1024,auto,0.57,0.0,13.7
+Novelty,100,1024,0.05,0.57,0.0,13.7
+Novelty,100,1024,0.03,0.57,0.0,13.7
+Novelty,100,1024,0.02,0.57,0.0,13.7
+Novelty,200,1024,auto,0.563,0.0,13.5
+Novelty,200,1024,0.05,0.563,0.0,13.5
+Novelty,200,1024,0.03,0.563,0.0,13.5
+Novelty,200,1024,0.02,0.563,0.0,13.5
+Outlier,200,256,0.02,0.268,0.0,6.4
