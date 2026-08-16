@@ -39,6 +39,12 @@ __pycache__/
 # Jupyter
 .ipynb_checkpoints/
 
+# Copies de sauvegarde d'éditeur (VS Code, Jupyter). Une copie périmée de
+# final.ipynb a déjà été confondue avec le notebook courant : ces fichiers ne
+# doivent jamais apparaître dans git status. Placé AVANT la négation
+# !model_final/** pour ne pas réexclure d'éventuels fichiers de ce dossier.
+*.bak
+
 # IDE
 .vscode/
 .idea/
