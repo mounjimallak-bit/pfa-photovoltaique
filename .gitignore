@@ -14,6 +14,17 @@ data/*
 !data/score_lstm_single.csv
 !data/ae_learning_curve.csv
 
+# Cache de la fusion dt1/dt2 (8,8 Mo). Les deux CSV bruts Zenodo pèsent 2,3 Go
+# et ne peuvent pas être versionnés (GitHub refuse au-delà de 100 Mo) : c'est
+# ce cache qui permet à un clone de rejouer les sections 3 à 15.
+!data/merged_5min_day.csv
+
+# Témoins figés de la phase exploratoire, lus par la cellule 15.4 pour
+# démontrer que l'échelle des erreurs de reconstruction dépend de
+# l'entraînement. Aucune cellule ne les réécrit — voir 15.4 pour la provenance.
+!data/score_ae_val.npy
+!data/score_lstm_va.npy
+
 # Modèles entraînés lourds — les artefacts légers de models/ sont versionnés
 *.pt
 *.h5
