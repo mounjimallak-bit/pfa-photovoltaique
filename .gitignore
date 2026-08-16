@@ -1,5 +1,18 @@
 # Données brutes et intermédiaires (trop volumineuses pour Git)
-data/
+#
+# On exclut le CONTENU de data/ (data/*) et non le répertoire lui-même
+# (data/) : git n'applique aucune négation à un fichier dont le répertoire
+# parent est exclu. Avec `data/`, toutes les exceptions ci-dessous seraient
+# silencieusement inopérantes.
+data/*
+
+# Exceptions — caches produits par notebooks/final.ipynb. Sans eux, un clone
+# relance plus de 9 h de grilles d'hyperparamètres et ~21 min d'entraînements
+# exploratoires. Ils doivent donc être versionnés avec le notebook.
+!data/tuning_*.csv
+!data/score_lstm_viabilite.csv
+!data/score_lstm_single.csv
+!data/ae_learning_curve.csv
 
 # Modèles entraînés lourds — les artefacts légers de models/ sont versionnés
 *.pt
@@ -29,3 +42,10 @@ Thumbs.db
 
 # Env
 .env
+
+# Système de détection déployé (~2,8 Mo au total) — versionné intégralement
+# pour qu'un simple clone suffise à rejouer le notebook sans réentraîner les
+# 10 réseaux (~50 min). La négation doit venir APRÈS la règle *.pkl qu'elle
+# annule, sinon les deux scalers retomberaient hors du dépôt.
+!model_final/
+!model_final/**
