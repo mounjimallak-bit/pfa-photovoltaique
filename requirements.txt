@@ -1,28 +1,28 @@
-# Data
+# Dépendances du projet — testées sous Python 3.10.11
+#
+# Le notebook notebooks/final.ipynb a été exécuté de bout en bout avec :
+#   tensorflow 2.21.0 | keras 3.12.1 | numpy 2.2.6 | pandas 2.2.2
+#   scikit-learn 1.5.1 | scipy 1.14.0 | matplotlib 3.10.9 | seaborn 0.13.2
+
+# --- Données ---
 pandas>=2.0
-numpy>=1.24
+numpy>=1.26
 
-# ML
+# --- Deep learning ---
+# model_final/ est au format .keras v3 : TensorFlow >= 2.16 (premier à embarquer
+# Keras 3) est requis, en deçà le chargement échoue.
+tensorflow>=2.16
+
+# --- ML classique ---
 scikit-learn>=1.3
-torch>=2.0
+scipy>=1.11
 
-# Visualisation & EDA
+# --- Visualisation & notebook ---
 matplotlib>=3.7
 seaborn>=0.13
+# Fournit ipykernel, IPython.display et nbconvert (commande de rejeu du README).
 jupyter>=1.0
 
-# Kafka
+# --- Streaming & base de données (src/consumer.py, replayer.py, db.py) ---
 kafka-python>=2.0
-
-# Base de données
 psycopg2-binary>=2.9
-sqlalchemy>=2.0
-
-# Utilitaires
-joblib>=1.3
-python-dotenv>=1.0
-tqdm>=4.65
-
-
-pyarrow>=14.0
-scipy>=1.11
