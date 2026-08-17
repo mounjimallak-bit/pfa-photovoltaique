@@ -18,13 +18,23 @@ def get_connection():
 
 
 def insert_measurement(mesure: dict, anomaly_score: float, is_anomaly: bool):
-    """Insère une mesure + score dans la table measurements."""
+    """
+    Insère une mesure + score dans la table measurements.
+
+    `mesure` doit être fourni avec des clés MINUSCULES (gti, pg, va, ia...).
+    Le replayer publie les colonnes du CSV telles quelles, donc en majuscules
+    (GTI, Pg, Va, Ia) : la normalisation des clés fait partie de l'étape S4,
+    côté consumer, avec le tampon glissant.
+    """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
         """
-        INSERT INTO measurements (time, gti, dti, ta, tpv, pg, ig, vg, fg, anomaly_score, is_anomaly)
-        VALUES (%(time)s, %(gti)s, %(dti)s, %(ta)s, %(tpv)s, %(pg)s, %(ig)s, %(vg)s, %(fg)s, %(score)s, %(anomaly)s)
+        INSERT INTO measurements
+            (time, gti, dti, ta, tpv, pg, ia, ig, va, vg, fg, anomaly_score, is_anomaly)
+        VALUES
+            (%(time)s, %(gti)s, %(dti)s, %(ta)s, %(tpv)s, %(pg)s, %(ia)s,
+             %(ig)s, %(va)s, %(vg)s, %(fg)s, %(score)s, %(anomaly)s)
         """,
         {**mesure, "score": anomaly_score, "anomaly": is_anomaly},
     )

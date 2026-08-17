@@ -2,17 +2,25 @@
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 
 -- Table principale : mesures capteurs
+--
+-- Les 6 colonnes marquées [F] sont les features du modèle final
+-- (model_final/config.json : GTI, Pg, Va, Vg, Ia, TPV). Elles doivent TOUTES
+-- être présentes, sans quoi la table ne peut pas alimenter DetecteurPV.
 CREATE TABLE measurements (
     time        TIMESTAMPTZ NOT NULL,
-    gti         DOUBLE PRECISION,  -- irradiation globale (W/m²)
-    dti         DOUBLE PRECISION,  -- irradiation diffuse
-    ta          DOUBLE PRECISION,  -- température ambiante (°C)
-    tpv         DOUBLE PRECISION,  -- température panneau (°C)
-    pg          DOUBLE PRECISION,  -- puissance produite (W)
-    ig          DOUBLE PRECISION,  -- courant réseau (A)
-    vg          DOUBLE PRECISION,  -- tension réseau (V)
-    fg          DOUBLE PRECISION,  -- fréquence (Hz)
-    anomaly_score DOUBLE PRECISION, -- score du modèle ML
+    gti         DOUBLE PRECISION,  -- [F] irradiation globale (W/m²)
+    dti         DOUBLE PRECISION,  --     irradiation diffuse
+    ta          DOUBLE PRECISION,  --     température ambiante (°C)
+    tpv         DOUBLE PRECISION,  -- [F] température panneau (°C)
+    pg          DOUBLE PRECISION,  -- [F] puissance produite (W)
+    ia          DOUBLE PRECISION,  -- [F] courant onduleur (A)
+    ig          DOUBLE PRECISION,  --     courant réseau (A)
+    va          DOUBLE PRECISION,  -- [F] tension onduleur (V)
+    vg          DOUBLE PRECISION,  -- [F] tension réseau (V)
+    fg          DOUBLE PRECISION,  --     fréquence (Hz)
+    -- Score de fusion AE+LSTM (moyenne des rangs contre la référence figée),
+    -- dans [0,1]. Anomalie si >= config.json/seuil_fusion.
+    anomaly_score DOUBLE PRECISION,
     is_anomaly  BOOLEAN DEFAULT FALSE
 );
 
