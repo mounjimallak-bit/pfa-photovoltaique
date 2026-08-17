@@ -24,7 +24,7 @@ Replayer (dataset test) → Kafka "measurements" → Consumer Python (modèle ML
 | Streaming | Apache Kafka |
 | Base de données | PostgreSQL + TimescaleDB |
 | Dashboard | Grafana |
-| ML | Scikit-learn, PyTorch |
+| ML | TensorFlow / Keras (autoencodeurs), Scikit-learn (Isolation Forest) |
 | Conteneurisation | Docker Compose |
 
 ## Lancement rapide
@@ -41,31 +41,65 @@ docker compose up -d
 
 ```
 pfa-photovoltaique/
-├── data/                  # Données (exclu de Git)
-├── models/                # Modèles entraînés (.pkl, .pt)
 ├── notebooks/
-│   ├── 01_exploration.ipynb
-│   ├── 02_fusion_dt1_dt2.ipynb
-│   ├── 03_isolation_forest.ipynb
-│   ├── 04_autoencoder.ipynb
-│   └── 05_lstm_autoencoder.ipynb
-├── src/
-│   ├── preprocessing.py
-│   ├── models.py
-│   ├── replayer.py
-│   ├── consumer.py
-│   └── db.py
+│   └── final.ipynb           # tout le pipeline ML, en 15 sections
+├── model_final/              # système déployé (~2,8 Mo), versionné
+│   ├── config.json           # features, hyperparamètres, seuil de fusion
+│   ├── ae/ae_0..4.keras      # ensemble de 5 autoencodeurs denses
+│   ├── lstm/lstm_0..4.keras  # ensemble de 5 autoencodeurs LSTM
+│   ├── scaler_ae.pkl         # MinMaxScaler, ajusté sur le train sain
+│   ├── scaler_lstm.pkl
+│   ├── ref_score_*.npy       # références de rang figées (validation)
+│   └── predictions_test.csv  # sorties du système sur le jeu de test
+├── data/                     # caches versionnés ; brut et intermédiaires exclus
+│   └── replay_test.csv       # partition de test rejouable (600 Ko)
+├── src/                      # chaîne temps réel
+│   ├── detecteur.py          # DetecteurPV — portage déployable du § 14
+│   ├── replayer.py           # rejoue la partition de test sur Kafka
+│   ├── consumer.py           # score le flux et alimente TimescaleDB
+│   └── db.py                 # insertions measurements / alarms
 ├── docker/
-│   └── init.sql
-├── tests/
+│   ├── init.sql              # schéma measurements / alarms / maintenance
+│   └── migration_01_va_ia.sql
+├── figures/                  # régénéré par le notebook, non versionné
 ├── docker-compose.yml
 ├── requirements.txt
 └── README.md
 ```
 
+## Démo temps réel
+
+```bash
+docker compose up -d
+python src/consumer.py     # dans un terminal
+python src/replayer.py     # dans un autre
+```
+
+Le replayer rejoue les 2 975 points de la partition de test à raison d'un par
+seconde ; le consumer reconstitue les séquences, score, écrit dans TimescaleDB et
+publie les anomalies sur le topic `alarms`. Aucun prérequis : `data/replay_test.csv`
+est versionné, et `model_final/` contient déjà les 10 réseaux.
+
+`src/detecteur.py` est le portage de la classe `DetecteurPV` définie en § 14 du
+notebook. Le notebook reste la source de vérité ; le portage est vérifié comme
+strictement équivalent (écart max 1e-16 sur les 2 813 points scorables du test),
+et le chemin streaming redonne exactement le score du chemin par lot.
+
+**Débit.** Un point coûte ~0,9 s à scorer, les 10 réseaux étant interrogés un par
+un. C'est le facteur limitant de la démo, et la raison du délai d'une seconde
+entre deux messages — soit 300x plus rapide que la cadence réelle des mesures,
+qui est de 5 minutes.
+
+**Base déjà initialisée.** `docker/init.sql` n'est joué qu'à la création du
+volume PostgreSQL. Sur une base existante, appliquer la migration :
+
+```bash
+docker compose exec -T timescaledb psql -U pfa -d photovoltaique < docker/migration_01_va_ia.sql
+```
+
 ## Dataset
 
-[(https://zenodo.org/records/7358042)](https://zenodo.org/records/7828879?preview_file=00_metadata_variable.jpg) (article PMC9800176)
+[Zenodo — record 7358042](https://zenodo.org/records/7358042) (article PMC9800176)
 
 - `dt1` : données météo (GTI, DTI, TA, TPV) — **2,14 Go**
 - `dt2` : données électriques + étiquettes de pannes (ombrage) — **193 Mo**
@@ -125,8 +159,27 @@ le calcul correspondant et réécrit le fichier de cache.
 
 ## Modèles
 
-1. **Isolation Forest** — baseline, détection ponctuelle
-2. **Autoencoder** — détection par erreur de reconstruction
-3. **LSTM Autoencoder** — prédiction de dégradations progressives (modèle principal)
+1. **Isolation Forest** — baseline, détection ponctuelle (§ 8)
+2. **Autoencodeur dense** — détection par erreur de reconstruction (§ 9)
+3. **Autoencodeur LSTM** — dégradations progressives, séquences de 6 pas (§ 10)
 
-Approche non supervisée : entraînement sur données normales uniquement, validation sur vraies pannes.
+**Le système final n'est aucun des trois pris isolément :** c'est la **fusion**
+de l'autoencodeur dense et de l'autoencodeur LSTM (§ 11), chacun étant lui-même
+un ensemble de 5 réseaux. Les deux scores sont convertis en **rangs** contre une
+référence de validation figée, puis moyennés — ce qui neutralise la différence
+d'échelle entre leurs erreurs de reconstruction. Une mesure est déclarée anormale
+si ce score dépasse le seuil de `model_final/config.json`, choisi par **F2 max**
+sur la validation : en exploitation PV, une panne ratée coûte plus cher qu'une
+fausse alerte.
+
+Approche non supervisée : entraînement sur données normales uniquement,
+validation sur vraies pannes.
+
+| Jeu | PR-AUC | Précision | Rappel | Épisodes détectés |
+|---|---|---|---|---|
+| Validation | 0,723 | 0,731 | 0,727 | 4/4 |
+| Test | 0,777 | 0,703 | 0,973 | 3/3 |
+
+Le rappel de test dépasse celui de validation parce que les deux jeux ne
+contiennent pas les mêmes pannes (test : 3.1 ; validation : 3.2 et 4.0). Le
+notebook consacre une cellule de limites à ce point, juste avant la § 15.10.
