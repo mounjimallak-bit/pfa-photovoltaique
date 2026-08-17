@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # --- Zookeeper (requis par Kafka) ---
   zookeeper:
