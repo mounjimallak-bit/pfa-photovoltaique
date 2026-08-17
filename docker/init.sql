@@ -26,6 +26,11 @@ CREATE TABLE measurements (
 
 SELECT create_hypertable('measurements', 'time');
 
+-- Unicité temporelle : le consumer insère en ON CONFLICT (time), de sorte que
+-- rejouer la démo écrase les lignes au lieu de les dupliquer. TimescaleDB
+-- impose que l'index unique contienne la colonne de partitionnement.
+CREATE UNIQUE INDEX measurements_time_uniq ON measurements (time);
+
 -- Table des alarmes
 CREATE TABLE alarms (
     id          SERIAL,
@@ -38,6 +43,8 @@ CREATE TABLE alarms (
 );
 
 SELECT create_hypertable('alarms', 'time');
+
+CREATE UNIQUE INDEX alarms_time_type_uniq ON alarms (time, alarm_type);
 
 -- Table historique maintenance
 CREATE TABLE maintenance_actions (
