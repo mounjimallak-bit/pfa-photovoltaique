@@ -52,7 +52,12 @@ pfa-photovoltaique/
 │   ├── ref_score_*.npy       # références de rang figées (validation)
 │   └── predictions_test.csv  # sorties du système sur le jeu de test
 ├── data/                     # caches versionnés ; brut et intermédiaires exclus
-│   └── replay_test.csv       # partition de test rejouable (600 Ko)
+│   ├── replay_test.csv       # partition de test rejouable (600 Ko)
+│   ├── merged_5min_day.csv   # fusion dt1/dt2 rééchantillonnée (8,8 Mo)
+│   ├── tuning_*.csv          # grilles d'hyperparamètres IF / AE / LSTM
+│   ├── score_lstm_*.csv      # LSTM exploratoires (§ 10.1, § 10.4)
+│   ├── ae_learning_curve.csv # courbe d'apprentissage AE (§ 9.5)
+│   └── score_*_va*.npy       # témoins figés de la phase exploratoire (§ 15.4)
 ├── src/                      # chaîne temps réel
 │   ├── detecteur.py          # DetecteurPV — portage déployable du § 14
 │   ├── replayer.py           # rejoue la partition de test sur Kafka
@@ -60,8 +65,9 @@ pfa-photovoltaique/
 │   └── db.py                 # insertions measurements / alarms
 ├── docker/
 │   ├── init.sql              # schéma measurements / alarms / maintenance
-│   └── migration_01_va_ia.sql
-├── figures/                  # régénéré par le notebook, non versionné
+│   ├── migration_01_va_ia.sql    # colonnes va / ia sur base existante
+│   └── migration_02_unicite.sql  # unicité sur time (démo rejouable)
+├── figures/                  # recréé par le notebook, non versionné (.gitignore)
 ├── docker-compose.yml
 ├── requirements.txt
 └── README.md
@@ -80,10 +86,23 @@ seconde ; le consumer reconstitue les séquences, score, écrit dans TimescaleDB
 publie les anomalies sur le topic `alarms`. Aucun prérequis : `data/replay_test.csv`
 est versionné, et `model_final/` contient déjà les 10 réseaux.
 
+**2 813 points sur 2 975 reçoivent un score.** Les 162 autres sont les
+`seq_len - 1 = 5` premiers points de chaque segment de journée : sans séquence
+LSTM complète, aucun score n'est calculable. Ces mesures sont tout de même
+écrites dans `measurements`, avec `anomaly_score` à NULL — la série capteur reste
+continue dans Grafana.
+
+Interfaces annexes lancées par le même `docker compose` : Kafka UI sur
+<http://localhost:8090> pour inspecter les topics, pgAdmin sur
+<http://localhost:5050> (admin@pfa.com / admin) pour la base.
+
 `src/detecteur.py` est le portage de la classe `DetecteurPV` définie en § 14 du
-notebook. Le notebook reste la source de vérité ; le portage est vérifié comme
-strictement équivalent (écart max 1e-16 sur les 2 813 points scorables du test),
-et le chemin streaming redonne exactement le score du chemin par lot.
+notebook. Le notebook reste la source de vérité. La § 15.8 instancie cette classe
+et vérifie qu'elle reproduit exactement les scores calculés à la main en § 15.5 :
+**écart max 0.00e+00 sur les 4 006 points de validation**. Le chemin streaming
+(fenêtre glissante de 6 points, un message à la fois) redonne le même score que
+le chemin par lot, la fusion comparant chaque erreur à une référence figée et non
+au lot courant.
 
 **Débit.** Un point coûte ~0,9 s à scorer, les 10 réseaux étant interrogés un par
 un. C'est le facteur limitant de la démo, et la raison du délai d'une seconde
@@ -91,11 +110,16 @@ entre deux messages — soit 300x plus rapide que la cadence réelle des mesures
 qui est de 5 minutes.
 
 **Base déjà initialisée.** `docker/init.sql` n'est joué qu'à la création du
-volume PostgreSQL. Sur une base existante, appliquer la migration :
+volume PostgreSQL. Sur une base existante, appliquer les migrations dans l'ordre :
 
 ```bash
 docker compose exec -T timescaledb psql -U pfa -d photovoltaique < docker/migration_01_va_ia.sql
+docker compose exec -T timescaledb psql -U pfa -d photovoltaique < docker/migration_02_unicite.sql
 ```
+
+La migration 02 pose l'unicité sur `time` : le consumer insère en
+`ON CONFLICT`, donc relancer la démo met les lignes à jour au lieu de les
+dupliquer.
 
 ## Dataset
 
@@ -175,10 +199,13 @@ fausse alerte.
 Approche non supervisée : entraînement sur données normales uniquement,
 validation sur vraies pannes.
 
-| Jeu | PR-AUC | Précision | Rappel | Épisodes détectés |
-|---|---|---|---|---|
-| Validation | 0,723 | 0,731 | 0,727 | 4/4 |
-| Test | 0,777 | 0,703 | 0,973 | 3/3 |
+| Jeu | Points scorés | PR-AUC | ROC-AUC | Précision | Rappel | Épisodes détectés |
+|---|---|---|---|---|---|---|
+| Validation | 4 006 | 0,723 | — | 0,731 | 0,727 | 4/4 |
+| Test | 2 813 | 0,777 | 0,996 | 0,703 | 0,973 | 3/3 |
+
+Au seuil 0,9460, le test donne VP 71 | FN 2 | FP 30 | VN 2710, et les trois
+épisodes sont détectés dès leur premier point scoré (délai médian 0 pas).
 
 Le rappel de test dépasse celui de validation parce que les deux jeux ne
 contiennent pas les mêmes pannes (test : 3.1 ; validation : 3.2 et 4.0). Le
