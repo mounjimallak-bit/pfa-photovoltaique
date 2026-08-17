@@ -19,13 +19,21 @@ data/*
 # ce cache qui permet à un clone de rejouer les sections 3 à 15.
 !data/merged_5min_day.csv
 
+# Partition de test rejouée par src/replayer.py (600 Ko). Versionnée pour que la
+# démo temps réel parte d'un clone nu, sans exiger d'avoir rejoué le notebook.
+!data/replay_test.csv
+
 # Témoins figés de la phase exploratoire, lus par la cellule 15.4 pour
 # démontrer que l'échelle des erreurs de reconstruction dépend de
 # l'entraînement. Aucune cellule ne les réécrit — voir 15.4 pour la provenance.
 !data/score_ae_val.npy
 !data/score_lstm_va.npy
 
-# Modèles entraînés lourds — les artefacts légers de models/ sont versionnés
+# Figures — intégralement régénérées par notebooks/final.ipynb, qui recrée le
+# dossier dans sa cellule d'imports. Un Run All suffit à les reconstruire.
+figures/
+
+# Modèles entraînés lourds — model_final/ est réintégré plus bas
 *.pt
 *.h5
 *.pkl
