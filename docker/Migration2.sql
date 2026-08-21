@@ -12,9 +12,9 @@
 -- partitionnement (time) : c'est le cas ici.
 --
 --   docker compose exec -T timescaledb \
---     psql -U pfa -d photovoltaique < docker/migration_02_unicite.sql
+--     psql -U pfa -d photovoltaique < docker/Migration2.sql
 --
--- Idempotent : relançable sans risque. À appliquer APRÈS migration_01.
+-- Idempotent : relançable sans risque. À appliquer APRÈS Migration1.sql.
 
 -- Purge des doublons éventuels, en gardant la ligne la plus récemment écrite.
 DELETE FROM measurements a USING measurements b
