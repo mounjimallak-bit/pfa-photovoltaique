@@ -6,7 +6,7 @@
 -- puisse alimenter DetecteurPV.
 --
 --   docker compose exec -T timescaledb \
---     psql -U pfa -d photovoltaique < docker/migration_01_va_ia.sql
+--     psql -U pfa -d photovoltaique < docker/Migration1.sql
 --
 -- Idempotent : relançable sans risque.
 
