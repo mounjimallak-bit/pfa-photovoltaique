@@ -1,0 +1,24 @@
+# Chargement automatique des dashboards versionnés dans grafana/dashboards/.
+#
+# Grafana relit le dossier toutes les updateIntervalSeconds : modifier le JSON
+# dans le dépôt suffit, sans redémarrer le conteneur.
+
+apiVersion: 1
+
+providers:
+  - name: PFA
+    orgId: 1
+    folder: PFA Photovoltaïque
+    type: file
+    # Interdit la suppression du dashboard depuis l'interface : la source de
+    # vérité est le fichier du dépôt.
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    # Autorise l'édition dans l'UI pour tester, mais toute modification non
+    # réexportée vers le dépôt sera écrasée au prochain rechargement.
+    allowUiUpdates: true
+    options:
+      # Dossier distinct de celui qui contient ce fichier .yml, et hors du
+      # volume grafana_data monté sur /var/lib/grafana.
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false
