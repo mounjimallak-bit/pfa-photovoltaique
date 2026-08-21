@@ -65,8 +65,14 @@ pfa-photovoltaique/
 │   └── db.py                 # insertions measurements / alarms
 ├── docker/
 │   ├── init.sql              # schéma measurements / alarms / maintenance
-│   ├── migration_01_va_ia.sql    # colonnes va / ia sur base existante
-│   └── migration_02_unicite.sql  # unicité sur time (démo rejouable)
+│   ├── Migration1.sql        # colonnes va / ia sur base existante
+│   └── Migration2.sql        # unicité sur time (démo rejouable)
+├── grafana/                  # supervision versionnée, chargée au démarrage
+│   ├── dashboards/
+│   │   └── pfa-photovoltaique.json   # les 8 panneaux
+│   └── provisioning/
+│       ├── datasources/timescaledb.yml  # connexion, uid figé
+│       └── dashboards/dashboards.yml    # chargement automatique
 ├── figures/                  # recréé par le notebook, non versionné (.gitignore)
 ├── docker-compose.yml
 ├── requirements.txt
@@ -97,8 +103,9 @@ Interfaces annexes lancées par le même `docker compose` : Kafka UI sur
 <http://localhost:5050> (admin@pfa.com / admin) pour la base.
 
 `src/detecteur.py` est le portage de la classe `DetecteurPV` définie en § 14 du
-notebook. Le notebook reste la source de vérité. La § 15.8 instancie cette classe
-et vérifie qu'elle reproduit exactement les scores calculés à la main en § 15.5 :
+notebook. Le notebook reste la source de vérité. La § 15.8 instancie la classe du
+notebook et vérifie qu'elle reproduit exactement les scores calculés à la main en
+§ 15.5 :
 **écart max 0.00e+00 sur les 4 006 points de validation**. Le chemin streaming
 (fenêtre glissante de 6 points, un message à la fois) redonne le même score que
 le chemin par lot, la fusion comparant chaque erreur à une référence figée et non
@@ -113,13 +120,40 @@ qui est de 5 minutes.
 volume PostgreSQL. Sur une base existante, appliquer les migrations dans l'ordre :
 
 ```bash
-docker compose exec -T timescaledb psql -U pfa -d photovoltaique < docker/migration_01_va_ia.sql
-docker compose exec -T timescaledb psql -U pfa -d photovoltaique < docker/migration_02_unicite.sql
+docker compose exec -T timescaledb psql -U pfa -d photovoltaique < docker/Migration1.sql
+docker compose exec -T timescaledb psql -U pfa -d photovoltaique < docker/Migration2.sql
 ```
 
 La migration 02 pose l'unicité sur `time` : le consumer insère en
 `ON CONFLICT`, donc relancer la démo met les lignes à jour au lieu de les
 dupliquer.
+
+## Dashboard Grafana
+
+Le dashboard est **versionné** : `docker compose up -d` recrée la datasource
+TimescaleDB *et* les 8 panneaux automatiquement, dans le dossier
+« PFA Photovoltaïque ». Aucune configuration manuelle, y compris sur un volume
+`grafana_data` neuf.
+
+<http://localhost:3000> (admin / admin)
+
+| Panneau | Contenu |
+|---|---|
+| Mesures reçues / Anomalies détectées / Taux d'anomalie | compteurs globaux |
+| Score d'anomalie et seuil de décision | score de fusion face au seuil 0,9460 |
+| Production PV et anomalies détectées | `Pg` avec les points anormaux surlignés |
+| Vue d'ensemble des 6 features | GTI, Pg, Va, Vg, Ia, TPV normalisées |
+| Anomalies par heure de la journée | répartition horaire des détections |
+| Dernières alarmes publiées | détail lu depuis la table `alarms` |
+
+`grafana/dashboards/pfa-photovoltaique.json` est la source de vérité : la base
+interne de Grafana n'est qu'un cache reconstruit à chaque démarrage. Après une
+modification dans l'interface, réexporter (*Share → Export → Save to file*) et
+réécrire le fichier, sinon le changement est perdu.
+
+Les 8 panneaux interrogent la datasource d'uid `timescaledb-pfa`, déclaré dans
+`grafana/provisioning/datasources/timescaledb.yml`. Modifier cet uid d'un côté
+sans l'autre vide le dashboard.
 
 ## Dataset
 
