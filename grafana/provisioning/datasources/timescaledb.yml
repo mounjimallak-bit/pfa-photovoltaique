@@ -1,0 +1,31 @@
+# Datasource TimescaleDB — provisionnée au démarrage de Grafana.
+#
+# Sans ce fichier, la source de données doit être recréée à la main à chaque
+# nouveau volume grafana_data, et le dashboard s'affiche vide (« Datasource
+# timescaledb-pfa was not found »).
+#
+# L'uid est FIGÉ : c'est lui que référencent les 8 panneaux de
+# grafana/dashboards/pfa-photovoltaique.json. Ne pas le modifier sans
+# remplacer la valeur dans le dashboard.
+
+apiVersion: 1
+
+datasources:
+  - name: TimescaleDB PFA
+    uid: timescaledb-pfa
+    type: grafana-postgresql-datasource
+    access: proxy
+    # Nom du service docker-compose, pas localhost : Grafana appelle depuis
+    # l'intérieur du réseau Docker.
+    url: timescaledb:5432
+    user: pfa
+    database: photovoltaique
+    isDefault: true
+    editable: true
+    secureJsonData:
+      password: pfa2026
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1600
+      # Active les fonctions d'agrégation temporelle TimescaleDB (time_bucket).
+      timescaledb: true
