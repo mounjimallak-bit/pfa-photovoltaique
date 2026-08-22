@@ -29,9 +29,8 @@ data/*
 !data/score_ae_val.npy
 !data/score_lstm_va.npy
 
-# Figures — intégralement régénérées par notebooks/final.ipynb, qui recrée le
-# dossier dans sa cellule d'imports. Un Run All suffit à les reconstruire.
-figures/
+
+
 
 # Modèles entraînés lourds — model_final/ est réintégré plus bas
 *.pt
