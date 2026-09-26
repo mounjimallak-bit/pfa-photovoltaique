@@ -80,13 +80,14 @@ def run_consumer():
     detecteur = DetecteurPV()
     tampon = TamponGlissant(detecteur.seq_len, detecteur.gap_min)
 
-    consumer = KafkaConsumer(
-        TOPIC_IN,
-        bootstrap_servers=KAFKA_BROKER,
-        group_id=GROUP_ID,
-        value_deserializer=lambda m: json.loads(m.decode("utf-8")),
-        auto_offset_reset="earliest",
-    )
+     consumer = KafkaConsumer(
+    TOPIC_IN,
+    bootstrap_servers=KAFKA_BROKER,
+    group_id=GROUP_ID,
+    value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+    auto_offset_reset="earliest",
+    enable_auto_commit=False,
+)
     producer = KafkaProducer(
         bootstrap_servers=KAFKA_BROKER,
         value_serializer=lambda v: json.dumps(v).encode("utf-8"),
@@ -125,7 +126,7 @@ def run_consumer():
         # noms de capteurs d'origine (GTI, Pg, Va...).
         insert_measurement({k.lower(): v for k, v in mesure.items()},
                            score, est_anomalie)
-
+        consumer.commit()
         if est_anomalie:
             n_alarmes += 1
             producer.send(TOPIC_ALARMS, value={**mesure, "score_fusion": score})
