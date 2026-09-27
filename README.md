@@ -42,38 +42,38 @@ docker compose up -d
 ```
 pfa-photovoltaique/
 ├── notebooks/
-│   └── final.ipynb           # tout le pipeline ML, en 15 sections
-├── model_final/              # système déployé (~2,8 Mo), versionné
-│   ├── config.json           # features, hyperparamètres, seuil de fusion
-│   ├── ae/ae_0..4.keras      # ensemble de 5 autoencodeurs denses
-│   ├── lstm/lstm_0..4.keras  # ensemble de 5 autoencodeurs LSTM
-│   ├── scaler_ae.pkl         # MinMaxScaler, ajusté sur le train sain
+│   └── final.ipynb          
+├── model_final/           
+│   ├── config.json         
+│   ├── ae/ae_0..4.keras      
+│   ├── lstm/lstm_0..4.keras  
+│   ├── scaler_ae.pkl       
 │   ├── scaler_lstm.pkl
-│   ├── ref_score_*.npy       # références de rang figées (validation)
-│   └── predictions_test.csv  # sorties du système sur le jeu de test
-├── data/                     # caches versionnés ; brut et intermédiaires exclus
-│   ├── replay_test.csv       # partition de test rejouable (600 Ko)
-│   ├── merged_5min_day.csv   # fusion dt1/dt2 rééchantillonnée (8,8 Mo)
-│   ├── tuning_*.csv          # grilles d'hyperparamètres IF / AE / LSTM
-│   ├── score_lstm_*.csv      # LSTM exploratoires (§ 10.1, § 10.4)
-│   ├── ae_learning_curve.csv # courbe d'apprentissage AE (§ 9.5)
-│   └── score_*_va*.npy       # témoins figés de la phase exploratoire (§ 15.4)
-├── src/                      # chaîne temps réel
-│   ├── detecteur.py          # DetecteurPV — portage déployable du § 14
-│   ├── replayer.py           # rejoue la partition de test sur Kafka
-│   ├── consumer.py           # score le flux et alimente TimescaleDB
-│   └── db.py                 # insertions measurements / alarms
+│   ├── ref_score_*.npy      
+│   └── predictions_test.csv
+├── data/                   
+│   ├── replay_test.csv      
+│   ├── merged_5min_day.csv  
+│   ├── tuning_*.csv          
+│   ├── score_lstm_*.csv      
+│   ├── ae_learning_curve.csv 
+│   └── score_*_va*.npy    
+├── src/                     
+│   ├── detecteur.py         
+│   ├── replayer.py         
+│   ├── consumer.py          
+│   └── db.py                 
 ├── docker/
-│   ├── init.sql              # schéma measurements / alarms / maintenance
-│   ├── Migration1.sql        # colonnes va / ia sur base existante
-│   └── Migration2.sql        # unicité sur time (démo rejouable)
-├── grafana/                  # supervision versionnée, chargée au démarrage
+│   ├── init.sql             
+│   ├── Migration1.sql       
+│   └── Migration2.sql       
+├── grafana/                 
 │   ├── dashboards/
-│   │   └── pfa-photovoltaique.json   # les 8 panneaux
+│   │   └── pfa-photovoltaique.json  
 │   └── provisioning/
-│       ├── datasources/timescaledb.yml  # connexion, uid figé
-│       └── dashboards/dashboards.yml    # chargement automatique
-├── figures/                  # recréé par le notebook, non versionné (.gitignore)
+│       ├── datasources/timescaledb.yml  
+│       └── dashboards/dashboards.yml   
+├── figures/                
 ├── docker-compose.yml
 ├── requirements.txt
 └── README.md
@@ -83,8 +83,8 @@ pfa-photovoltaique/
 
 ```bash
 docker compose up -d
-python src/consumer.py     # dans un terminal
-python src/replayer.py     # dans un autre
+python src/consumer.py    
+python src/replayer.py    
 ```
 
 Le replayer rejoue les 2 975 points de la partition de test à raison d'un par
