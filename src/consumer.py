@@ -1,7 +1,4 @@
-"""
-Consumer Kafka : lit les mesures, score avec le système de détection,
-écrit dans TimescaleDB, publie les alarmes.
-"""
+
 from collections import deque
 import json
 import os
@@ -10,6 +7,7 @@ import sys
 
 import pandas as pd
 from kafka import KafkaConsumer, KafkaProducer
+from kafka.structs import OffsetAndMetadata, TopicPartition
 
 from db import insert_measurement, insert_alarm, close_connection
 from detecteur import DetecteurPV
@@ -18,61 +16,43 @@ from detecteur import DetecteurPV
 KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
 TOPIC_IN = "measurements"
 TOPIC_ALARMS = "alarms"
-
-# Un group_id est indispensable : sans lui, kafka-python ne commite aucun
-# offset et chaque redémarrage relit le topic depuis le début. Combiné à
-# auto_offset_reset="earliest", rejouer la démo réinsérait deux fois les mêmes
-# 2 813 points. Le group_id fait reprendre le consumer là où il s'était arrêté ;
-# les insertions restent idempotentes par sécurité (ON CONFLICT, cf. db.py).
 GROUP_ID = os.getenv("KAFKA_GROUP_ID", "pfa-detecteur")
 
 
 class TamponGlissant:
-    """
-    Accumule les dernières mesures pour reconstituer une séquence LSTM.
-
-    Le détecteur travaille par lot et exige seq_len points contigus, alors que
-    Kafka livre point par point. Le tampon est remis à zéro dès qu'un trou
-    dépasse gap_minutes : sans ça, on fabriquerait des transitions soir -> matin
-    qui n'existent pas dans les données, la nuit n'étant pas mesurée.
-    """
+  
 
     def __init__(self, seq_len: int, gap_minutes: int):
         self.seq_len = seq_len
         self.gap = pd.Timedelta(f"{gap_minutes}min")
         self.points = deque(maxlen=seq_len)
 
-    def ajouter(self, horodatage, mesure: dict):
+    def ajouter(self, offset: int, horodatage, mesure: dict):
         """Retourne un DataFrame de seq_len lignes si la fenêtre est complète."""
-        if self.points and horodatage - self.points[-1][0] > self.gap:
+        if self.points and horodatage - self.points[-1][1] > self.gap:
             self.points.clear()
-        self.points.append((horodatage, mesure))
+        self.points.append((offset, horodatage, mesure))
 
         if len(self.points) < self.seq_len:
             return None
-        return pd.DataFrame([m for _, m in self.points],
-                            index=pd.DatetimeIndex([t for t, _ in self.points]))
+        return pd.DataFrame(
+            [m for _, _, m in self.points],
+            index=pd.DatetimeIndex([t for _, t, _ in self.points]))
+
+    def offset_a_commiter(self):
+        return self.points[0][0]
 
 
 def scorer(detecteur, fenetre):
-    """
-    Score le dernier point d'une fenêtre complète.
-
-    Retourne (score, anomalie) ou (None, False) si la fenêtre n'est pas
-    scorable. predire_lot lève une ValueError dès qu'une seule des seq_len
-    lignes porte un NaN sur une feature : elle est écartée par le filtre
-    notna(), le segment retombe sous seq_len et plus aucune séquence n'est
-    constructible. Un capteur qui décroche une fois suffisait à interrompre la
-    boucle Kafka — d'où le rattrapage ici.
-    """
+  
     if fenetre is None:
-        return None, False
+        return None, None
     try:
         resultat = detecteur.predire_lot(fenetre)
     except ValueError:
-        return None, False
+        return None, None
     if resultat.empty:
-        return None, False
+        return None, None
     return float(resultat["score_fusion"].iloc[-1]), bool(resultat["anomalie"].iloc[-1])
 
 
@@ -80,14 +60,14 @@ def run_consumer():
     detecteur = DetecteurPV()
     tampon = TamponGlissant(detecteur.seq_len, detecteur.gap_min)
 
-     consumer = KafkaConsumer(
-    TOPIC_IN,
-    bootstrap_servers=KAFKA_BROKER,
-    group_id=GROUP_ID,
-    value_deserializer=lambda m: json.loads(m.decode("utf-8")),
-    auto_offset_reset="earliest",
-    enable_auto_commit=False,
-)
+    consumer = KafkaConsumer(
+        TOPIC_IN,
+        bootstrap_servers=KAFKA_BROKER,
+        group_id=GROUP_ID,
+        value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+        auto_offset_reset="earliest",
+        enable_auto_commit=False,
+    )
     producer = KafkaProducer(
         bootstrap_servers=KAFKA_BROKER,
         value_serializer=lambda v: json.dumps(v).encode("utf-8"),
@@ -111,28 +91,29 @@ def run_consumer():
         n_lues += 1
 
         horodatage = pd.Timestamp(mesure["time"])
-        fenetre = tampon.ajouter(horodatage,
+        fenetre = tampon.ajouter(message.offset, horodatage,
                                  {c: mesure.get(c) for c in detecteur.features})
         score, est_anomalie = scorer(detecteur, fenetre)
         if score is not None:
             n_scorees += 1
 
-        # La mesure est écrite dans TOUS les cas, scorable ou non : les
-        # seq_len - 1 premiers points de chaque journée n'ont pas de séquence
-        # complète (162 points sur 2 975 pour la partition de test). Les
-        # exclure laissait autant de trous dans Grafana sur des relevés qui
-        # existent bel et bien. anomaly_score reste NULL pour ces points.
-        # La table utilise des colonnes en minuscules, le flux transporte les
-        # noms de capteurs d'origine (GTI, Pg, Va...).
         insert_measurement({k.lower(): v for k, v in mesure.items()},
                            score, est_anomalie)
-        consumer.commit()
+
         if est_anomalie:
             n_alarmes += 1
             producer.send(TOPIC_ALARMS, value={**mesure, "score_fusion": score})
             insert_alarm(mesure, score)
             print(f"ALARME {horodatage} | score {score:.4f} "
                   f"(seuil {detecteur.seuil:.4f})")
+
+        # Commit en dernier, une fois la mesure ET l'alarme durables : commiter
+        # avant l'envoi de l'alarme la perdrait définitivement en cas de crash
+        # entre les deux, le message n'étant plus redélivré.
+        consumer.commit({
+            TopicPartition(message.topic, message.partition):
+                OffsetAndMetadata(tampon.offset_a_commiter(), None),
+        })
 
         if n_lues % 100 == 0:
             print(f"{n_lues} mesures lues | {n_scorees} scorées "
