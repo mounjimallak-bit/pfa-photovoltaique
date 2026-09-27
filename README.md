@@ -157,8 +157,6 @@ sans l'autre vide le dashboard.
 
 ## Dataset
 
-[Zenodo — record 7358042](https://zenodo.org/records/7358042) (article PMC9800176)
-
 - `dt1` : données météo (GTI, DTI, TA, TPV) — **2,14 Go**
 - `dt2` : données électriques + étiquettes de pannes (ombrage) — **193 Mo**
 
@@ -184,9 +182,9 @@ fichier au-delà de 100 Mo. Depuis un clone qui ne les contient pas :
 
 | Section | Comportement sans les CSV bruts |
 |---|---|
-| § 1 — Exploration des CSV bruts | **sautée**, avec un message explicite |
-| § 2 — Fusion dt1/dt2 et rééchantillonnage | **rechargée** depuis `data/merged_5min_day.csv`, non recalculée |
-| § 3 à § 15 | exécutées normalement, résultats identiques |
+|  1 — Exploration des CSV bruts | **sautée**, avec un message explicite |
+|  2 — Fusion dt1/dt2 et rééchantillonnage | **rechargée** depuis `data/merged_5min_day.csv`, non recalculée |
+|  3 à  15 | exécutées normalement, résultats identiques |
 
 Le notebook détecte lui-même la situation (`RAW_DISPONIBLE`, cellule d'imports) et l'annonce
 en clair au démarrage. Pour rejouer les sections 1 et 2 en entier, télécharger les deux CSV
@@ -208,7 +206,7 @@ le calcul correspondant et réécrit le fichier de cache.
 | `FORCER_TUNING_A` / `FORCER_TUNING_B` | grilles LSTM Phase A / Phase B | ~3 h 20 / ~5 h 30 |
 | `FORCER_TUNING_AE` | grille hyperparamètres AE | ~30 min |
 | `FORCER_ABLATION_AE` / `FORCER_TUNING_IF` | ablation features AE / grille Isolation Forest | quelques min |
-| `FORCER_LSTM_VIABILITE` / `FORCER_LSTM_SINGLE` | LSTM exploratoires (§ 10.1 / § 10.4) | ~11 min / ~9 min |
+| `FORCER_LSTM_VIABILITE` / `FORCER_LSTM_SINGLE` | LSTM exploratoires ( 10.1 /  10.4) | ~11 min / ~9 min |
 | `FORCER_COURBE` | réseau de démonstration de la courbe d'apprentissage | ~1 min |
 | `FORCER_RECALCUL` | fusion dt1/dt2 — **exige les CSV bruts Zenodo** | ~10 min |
 
