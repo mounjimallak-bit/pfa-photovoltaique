@@ -11,7 +11,7 @@ Detects faults on a solar plant **without ever training on a labelled fault**, a
 
 **[Read the full case study →](https://mounjimallak-bit.github.io/Portfolio/post/pfa/)** — data exploration, feature selection, model tuning and every decision along the way.
 
-![Grafana dashboard — real-time monitoring](docs/grafana.png)
+![Grafana dashboard — real-time monitoring](https://raw.githubusercontent.com/mounjimallak-bit/Portfolio/main/post/pfa/images/grafana.png)
 
 ## The problem
 
