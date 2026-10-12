@@ -1,48 +1,87 @@
-# Predictive Maintenance for Photovoltaic Systems
+Photovoltaic Anomaly Detection — Real-Time Predictive Maintenance
+Afficher l'image Afficher l'image Afficher l'image Afficher l'image Afficher l'image Afficher l'image
 
-**Unsupervised** anomaly detection on PV measurements in near real time: an ensemble of autoencoders and an ensemble of LSTMs, fused by rank averaging, feed a Grafana dashboard and Kafka alarms.
+Detects faults on a solar plant without ever training on a labelled fault, and scores each new measurement as it arrives — from a Kafka stream to a live Grafana dashboard.
 
-> Final-year engineering project (PFA) — ENSA Agadir, 2026
+Read the full case study → — data exploration, feature selection, model tuning and every decision along the way.
 
-![Grafana dashboard: real-time monitoring](docs/grafana.png)
-_Replay of the test set: anomaly score and decision threshold, PV production with detected anomalies, published alerts._
+Grafana dashboard — real-time monitoring
 
-## Why this project
+The problem
+Photovoltaic plants fail quietly. Shading, degradation and inverter faults do not stop production; they bend it down by a few percent, for days, until someone notices. Labelled fault archives are rare, so a supervised classifier is not an option in practice.
 
-PV faults (shading, degradation, intermittent failures) are rarely labelled in operation. The system learns the **normal behaviour** of the installation from healthy data only, then flags measurements that deviate from it.
+This system learns what a healthy plant looks like, and raises an alarm when live measurements depart from it.
 
-## Results
+Highlights
+Unsupervised — models are trained on healthy data only; labels are used solely to pick the alert threshold and to report results.
+Streaming-ready — each 5-minute measurement is scored on its own, against a frozen reference, so the score is identical offline and in production.
+Ensemble of 10 networks — 5 dense autoencoders + 5 LSTM autoencoders, fused by rank averaging.
+Honest evaluation — chronological split, model selection on validation only, test set opened once at the very end.
+Full stack in one command — Kafka, TimescaleDB, Grafana, Kafka UI and pgAdmin via Docker Compose.
+Results
+Alert rule: fusion_score ≥ 0.946 (threshold maximising F2 on validation — a missed fault costs far more than a false alarm).
 
-Deployed system: **dense autoencoder (×5) + LSTM (×5)**, rank-average fusion, threshold set on validation (max F2): `fusion_score ≥ 0.946`.
+Validation	Test
+PR-AUC	0.723	0.777
+Precision	0.731	0.703
+Recall	0.727	0.973
+Fault episodes detected	4 / 4	3 / 3
+Median detection delay	first measurement	first measurement
+PR-AUC on test is ~30× the random baseline (anomaly prevalence 2.6%). ROC-AUC on test: 0.996.
 
-| | Validation | Test |
-|---|---|---|
-| PR-AUC (point level) | 0.723 | **0.777** |
-| Precision | 0.731 | 0.703 |
-| Recall | 0.727 | 0.973 |
-| Fault episodes detected | 4 / 4 | 3 / 3 |
-| Median detection delay | ~0 min | ~0 min |
-| Anomaly prevalence (baseline) | 4.4% | 2.6% |
+Architecture
+flowchart LR
+    R["Replayer<br/><code>replayer.py</code>"] -->|JSON, 1 msg / measurement| K[("Kafka<br/>topic: measurements")]
+    K --> C["Scoring consumer<br/><code>consumer.py</code>"]
+    C --- D["Ensemble scorer<br/><code>detecteur.py</code><br/>AE ×5 + LSTM ×5<br/>rank averaging"]
+    C -->|INSERT| T[("TimescaleDB<br/>measurements, alarms")]
+    C -->|anomalies| A[("Kafka<br/>topic: alarms")]
+    T -->|SQL| G["Grafana<br/>live dashboard"]
+Key design decisions
+Decision	Why
+Rank against a frozen reference distribution	A score computed relative to the current batch looks good offline and is meaningless in production, where the batch is a single point.
+AE + LSTM fusion	The LSTM sees temporal context the dense AE cannot; fusing them adds +0.033 PR-AUC over the best single model.
+Isolation Forest removed	Kept as a baseline, but adding it to the fusion lowered PR-AUC.
+Simple rank average over stacking	Weighted and stacked fusions gave < 0.01 gain with a real overfitting risk.
+Threshold on F2	Recall matters more than precision for maintenance.
+Limitations
+The test set contains a single fault type, never seen during development. The 0.973 recall should be read with caution — validation, with other fault types, gives 0.727.
+On validation, recall plateaus around 0.85: beyond it, precision falls to the baseline.
+Few fault episodes overall, and a single installation: the model must be retrained for another site.
+The replayer streams historical data; it is not connected to physical sensors.
+Quick start
+Requirements: Docker, Docker Compose, Python 3.10+.
 
-On the test set: 71 true positives, 2 false negatives, 30 false positives, 2,710 true negatives (ROC-AUC 0.996).
+git clone https://github.com/mounjimallak-bit/pfa-photovoltaique.git
+cd pfa-photovoltaique
 
-![Fusion threshold](figures/fig_seuil_fusion_final.png)
+# 1. Infrastructure: Kafka, TimescaleDB, Grafana, Kafka UI, pgAdmin
+docker compose up -d
 
-### How the model was selected
+# 2. Python environment
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 
-- All detectors were compared **on validation only**; the test set stayed closed until the final evaluation.
-- An Isolation Forest was evaluated and **discarded**: adding it to the fusion lowers PR-AUC (IF+AE+LSTM < AE+LSTM).
-- Fusing AE and LSTM adds +0.033 PR-AUC over the AE alone (0.690 → 0.723). More complex variants (weighted average, stacking) were rejected: negligible gain or overfitting risk.
+# 3. Start the scoring consumer, then the replayer (two terminals)
+python src/consumer.py
+python src/replayer.py
+Service	URL
+Grafana	http://localhost:3000 (admin / admin — change it)
+Kafka UI	http://localhost:8090
+pgAdmin	http://localhost:5050
+Project structure
+├── src/
+│   ├── replayer.py       streams the test set into Kafka
+│   ├── consumer.py       scores each measurement, writes to DB and alarms
+│   ├── detecteur.py      AE + LSTM ensemble and rank fusion
+│   └── db.py             TimescaleDB access
+├── model_final/          trained models, scalers, reference scores, config.json
+├── notebooks/final.ipynb full analysis: EDA, ablations, tuning, evaluation
+├── docker/               SQL schema and migrations
+├── grafana/              provisioned dashboard and datasource
+└── docker-compose.yml
+Tech stack
+Python · TensorFlow / Keras · scikit-learn · pandas · Apache Kafka · PostgreSQL / TimescaleDB · Grafana · Docker Compose
 
-![Fusion methods comparison](figures/fig_fusion_methodes.png)
-
-## Limitations
-
-- **The test set contains a single fault type, never seen during development** (3 episodes). The 0.973 recall should be read with caution: validation, with different fault types, gives 0.727.
-- **Recall plateaus on validation**: beyond ~0.85 recall, precision drops to the baseline. This is a limit of the system, not a tuning issue.
-- Few fault episodes overall: metrics are indicative.
-- Trained on a single installation: it must be retrained before use on another site.
-- The replayer replays historical data; it does not read physical sensors.
-
-## Architecture
-
+Author
+Malak Mounji — final-year engineering student in Data Science, Big Data & AI, ENSA Agadir. Portfolio · LinkedIn
