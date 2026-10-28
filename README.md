@@ -1,4 +1,4 @@
-# Photovoltaic Anomaly Detection — Real-Time Predictive Maintenance
+# Photovoltaic Anomaly Detection: Real-Time Predictive Maintenance
 
 ![Python](https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-Keras%203-FF6F00?logo=tensorflow&logoColor=white)
@@ -7,29 +7,29 @@
 ![Grafana](https://img.shields.io/badge/Grafana-10.4-F46800?logo=grafana&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker%20Compose-one%20command-2496ED?logo=docker&logoColor=white)
 
-Detects faults on a solar plant **without ever training on a labelled fault**, and scores each new measurement as it arrives — from a Kafka stream to a live Grafana dashboard.
+Detects shading faults on a solar plant **without ever training on a labelled fault**, and scores each new measurement as it arrives, from a Kafka stream to a live Grafana dashboard.
 
-**[Read the full case study →](https://mounjimallak-bit.github.io/Portfolio/post/pfa/)** — data exploration, feature selection, model tuning and every decision along the way.
+**[Read the full case study →](https://mounjimallak-bit.github.io/Portfolio/post/pfa/)**: data exploration, feature selection, model tuning and every decision along the way.
 
-![Grafana dashboard — real-time monitoring](https://raw.githubusercontent.com/mounjimallak-bit/Portfolio/main/post/pfa/images/grafana.png)
+![Grafana dashboard, real-time monitoring](https://raw.githubusercontent.com/mounjimallak-bit/Portfolio/main/post/pfa/images/grafana.png)
 
 ## The problem
 
-Photovoltaic plants fail quietly. Shading, degradation and inverter faults do not stop production; they bend it down by a few percent, for days, until someone notices. Labelled fault archives are rare, so a supervised classifier is not an option in practice.
+Photovoltaic plants fail quietly. Shading and other partial faults do not stop production; they bend it down by a few percent, for days, until someone notices. Labelled fault archives are rare, so a supervised classifier is not an option in practice.
 
 This system learns what a **healthy plant** looks like, and raises an alarm when live measurements depart from it.
 
 ## Highlights
 
-- **Unsupervised** — models are trained on healthy data only; labels are used solely to pick the alert threshold and to report results.
-- **Streaming-ready** — each 5-minute measurement is scored on its own, against a frozen reference, so the score is identical offline and in production.
-- **Ensemble of 10 networks** — 5 dense autoencoders + 5 LSTM autoencoders, fused by rank averaging.
-- **Honest evaluation** — chronological split, model selection on validation only, test set opened once at the very end.
-- **Full stack in one command** — Kafka, TimescaleDB, Grafana, Kafka UI and pgAdmin via Docker Compose.
+- **Unsupervised:** models are trained on healthy data only; labels are used solely to pick the alert threshold and to report results.
+- **Streaming-ready:** each 5-minute measurement is scored on its own, against a frozen reference, so the score is identical offline and in production.
+- **Ensemble of 10 networks:** 5 dense autoencoders + 5 LSTM autoencoders, fused by rank averaging.
+- **Clean evaluation:** chronological split, model selection on validation only, test set opened once at the very end.
+- **Full stack in one command:** Kafka, TimescaleDB, Grafana, Kafka UI and pgAdmin via Docker Compose.
 
 ## Results
 
-Alert rule: `fusion_score ≥ 0.946` (threshold maximising F2 on validation — a missed fault costs far more than a false alarm).
+Alert rule: `fusion_score ≥ 0.946` (threshold maximising F2 on validation, because a missed fault costs far more than a false alarm).
 
 | | Validation | Test |
 |---|:---:|:---:|
@@ -40,6 +40,15 @@ Alert rule: `fusion_score ≥ 0.946` (threshold maximising F2 on validation — 
 | Median detection delay | first measurement | first measurement |
 
 PR-AUC on test is **~30× the random baseline** (anomaly prevalence 2.6%). ROC-AUC on test: 0.996.
+
+## Data
+
+Public dataset from [Zenodo, record 7358042](https://zenodo.org/records/7358042): a 4 kW domestic PV installation in La Réunion, with meteorological and electrical measurements and labelled shading faults (uniform, partial on 1 to 3 modules, partial on part of a module, intermittent). It was provided by the internship supervisor.
+
+The two raw CSV files (2.3 GB) are not versioned. Only their 5-minute merge, `data/merged_5min_day.csv`, is in the repository, and the notebook reloads it automatically. To rerun the raw-data sections, download these two files into `data/`:
+
+- `dt1_solar_and_meteorological_measurement.csv`
+- `dt2_electrical_production_inverter_1_with_faults.csv`
 
 ## Architecture
 
@@ -65,7 +74,7 @@ flowchart LR
 
 ## Limitations
 
-- The test set contains **a single fault type**, never seen during development. The 0.973 recall should be read with caution — validation, with other fault types, gives 0.727.
+- The test set contains **a single fault type**, never seen during development. The 0.973 recall should be read with caution: validation, with other fault types, gives 0.727.
 - On validation, recall plateaus around 0.85: beyond it, precision falls to the baseline.
 - Few fault episodes overall, and a single installation: the model must be retrained for another site.
 - The replayer streams historical data; it is not connected to physical sensors.
@@ -92,7 +101,7 @@ python src/replayer.py
 
 | Service | URL |
 |---|---|
-| Grafana | http://localhost:3000 (`admin` / `admin` — change it) |
+| Grafana | http://localhost:3000 (`admin` / `admin`, change it) |
 | Kafka UI | http://localhost:8090 |
 | pgAdmin | http://localhost:5050 |
 
@@ -117,5 +126,5 @@ Python · TensorFlow / Keras · scikit-learn · pandas · Apache Kafka · Postgr
 
 ## Author
 
-**Malak Mounji** — final-year engineering student in Data Science, Big Data & AI, ENSA Agadir.
+**Malak Mounji**, engineering student in Data Science, Big Data & AI at ENSA Agadir. Summer internship (PFA) at Albarray Consulting, July to August 2026.
 [Portfolio](https://mounjimallak-bit.github.io/Portfolio/) · [LinkedIn](https://www.linkedin.com/in/malakmounji/)
