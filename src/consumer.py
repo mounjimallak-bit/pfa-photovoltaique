@@ -22,7 +22,13 @@ FILTRE_GTI_MIN = 50
 
 
 class TamponGlissant:
-  
+    """Accumule les mesures récentes pour reconstruire une séquence LSTM.
+
+    Le tampon est vidé dès qu'un écart dépasse gap_minutes : sinon on fabriquerait
+    des transitions soir -> matin qui n'existent pas, la nuit n'étant pas mesurée.
+    Chaque point garde son offset Kafka, pour que le commit pointe sur le plus ancien
+    point du tampon et qu'un redémarrage reconstruise la fenêtre.
+    """
 
     def __init__(self, seq_len: int, gap_minutes: int):
         self.seq_len = seq_len
