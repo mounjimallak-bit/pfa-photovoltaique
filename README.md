@@ -21,7 +21,7 @@ This system learns what a **healthy plant** looks like, and raises an alarm when
 
 ## Highlights
 
-- **Unsupervised:** models are trained on healthy data only; labels are used solely to pick the alert threshold and to report results.
+- **Semi-supervised:** the networks are trained on healthy data only, but labels are used beyond the threshold: to remove fault rows from training, to select features, to tune hyperparameters, to choose the fusion and the threshold, and to report results.
 - **Streaming-ready:** each 5-minute measurement is scored on its own, against a frozen reference, so the score is identical offline and in production.
 - **Ensemble of 10 networks:** 5 dense autoencoders + 5 LSTM autoencoders, fused by rank averaging.
 - **Clean evaluation:** chronological split, model selection on validation only, test set opened once at the very end.
