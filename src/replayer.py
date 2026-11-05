@@ -55,7 +55,7 @@ def replay(delay: float = 1.0):
     Publie chaque mesure de la partition de test sur Kafka.
     delay = secondes entre deux messages (simuler le temps réel).
 
-    Le consumer met ~0,9 s à scorer un point (10 réseaux interrogés un par un) :
+    Le consumer met ~0,2 à 0,4 s à scorer un point (10 réseaux interrogés un par un) :
     en deçà de 1 s le flux prend du retard. Ça reste 300x plus rapide que la
     cadence réelle des mesures, qui est de 5 minutes.
     """
