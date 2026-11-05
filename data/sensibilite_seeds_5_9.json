@@ -1,0 +1,12 @@
+{
+  "seuil": 0.9542499476667909,
+  "prauc_val": 0.7226919189336336,
+  "prauc_test": 0.7993213691941676,
+  "prauc_test_lstm": 0.3316962159104515,
+  "precision_test": 0.7368421052631579,
+  "rappel_test": 0.958904109589041,
+  "fp_test": 25,
+  "episodes_test": "3/3",
+  "evenements_semaine": 2.3584229390681,
+  "jours_alarme": 63
+}
