@@ -73,3 +73,4 @@ Thumbs.db
 # annule, sinon les deux scalers retomberaient hors du dépôt.
 !model_final/
 !model_final/**
+!data/sensibilite_seeds_5_9.json
