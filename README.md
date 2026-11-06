@@ -124,7 +124,7 @@ python -m pytest tests/ -v
 │   ├── detecteur.py      AE + LSTM ensemble and rank fusion
 │   └── db.py             TimescaleDB access
 ├── model_final/          trained models, scalers, reference scores, config.json
-├── notebooks/final.ipynb full analysis: EDA, ablations, tuning, evaluation
+├── notebooks/final-.ipynb full analysis: EDA, ablations, tuning, evaluation
 ├── tests/                consumer message handling vs batch scores
 ├── docker/               SQL schema and migrations
 ├── grafana/              provisioned dashboard and datasource
