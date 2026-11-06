@@ -74,3 +74,4 @@ Thumbs.db
 !model_final/
 !model_final/**
 !data/sensibilite_seeds_5_9.json
+!data/loio_scores.csv.gz
