@@ -97,7 +97,8 @@ docker compose up -d
 # 2. Python environment
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
+# Optional: copy .env.example to .env to change the broker, topics or database settings.
+# All components (consumer, replayer, docker compose) read the same values from src/config.py and .env.
 # 3. Start the scoring consumer, then the replayer (two terminals)
 until python src/consumer.py; do echo "consumer stopped, restarting in 5 s"; sleep 5; done
 python src/replayer.py
