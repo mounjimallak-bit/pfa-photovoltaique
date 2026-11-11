@@ -7,12 +7,12 @@ datasources:
     type: grafana-postgresql-datasource
     access: proxy
     url: timescaledb:5432
-    user: pfa
-    database: photovoltaique
+    user: ${PGUSER}
+    database: ${PGDATABASE}
     isDefault: true
     editable: true
     secureJsonData:
-      password: pfa2026
+      password: ${PGPASSWORD}
     jsonData:
       sslmode: disable
       postgresVersion: 1600
