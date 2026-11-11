@@ -29,9 +29,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: pfa
-      POSTGRES_PASSWORD: pfa2026
-      POSTGRES_DB: photovoltaique
+      POSTGRES_USER: ${PGUSER:-pfa}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-pfa2026}
+      POSTGRES_DB: ${PGDATABASE:-photovoltaique}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -44,6 +44,9 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
+      PGUSER: ${PGUSER:-pfa}
+      PGPASSWORD: ${PGPASSWORD:-pfa2026}
+      PGDATABASE: ${PGDATABASE:-photovoltaique}
     volumes:
       - grafana_data:/var/lib/grafana
       # Datasource + dashboards versionnes : Grafana les recharge a chaque
