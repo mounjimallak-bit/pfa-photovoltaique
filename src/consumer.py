@@ -10,6 +10,7 @@ from kafka.structs import OffsetAndMetadata, TopicPartition
 from config import (
     KAFKA_BROKER, GROUP_ID, REQUEST_TIMEOUT_MS, DELAI_LIVRAISON_MS,
     TOPIC_MESURES as TOPIC_IN, TOPIC_ALARMES as TOPIC_ALARMS, resume as resume_config,
+    exiger_secrets,
 )
 from db import insert_measurement, insert_alarm, close_connection
 from detecteur import DetecteurPV
@@ -156,6 +157,7 @@ def traiter_et_persister(message, tampon, detecteur, consumer, producer, stats):
 
 
 def run_consumer():
+    exiger_secrets() 
     detecteur = DetecteurPV()
     tampon = TamponGlissant(detecteur.seq_len, detecteur.gap_min)
 
