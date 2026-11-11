@@ -74,7 +74,7 @@ flowchart LR
 
 ## Limitations
 
-- The test set contains **a single fault sub-type (F3.1)**, absent from development but a near-twin of F3.2, which is in validation. It is three repeats of one staged experiment: 3/3 episodes gives a 95% interval of 0.29–1.00 on the detection rate, and a day-level bootstrap puts test PR-AUC between about 0.49 and 0.94.
+- The test set contains **a single fault sub-type (F3.1)**, absent from development but a near-twin of F3.2, which is in validation. It is three repeats of one staged experiment: 3/3 episodes gives a 95% interval of 0.29–1.00 on the detection rate, and a day-level bootstrap puts test PR-AUC between 0.48 and 0.94.
 - **Simple baselines are competitive.** A 10-nearest-neighbour distance on the six raw sensors scores 0.64 on validation and 0.88 on test (ensemble: 0.72 and 0.78). The ensemble's advantage is not established.
 - **Seasons.** Training covers late spring and summer only. On the 10.5 fault-free months after the study period, the deployed threshold raises about 2.6 false-alarm events a week overall, and 4–11 a week from June to September (austral winter).
 - On validation, recall plateaus around 0.85: beyond it, precision falls to the baseline.
