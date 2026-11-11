@@ -30,7 +30,7 @@ services:
       - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: ${PGUSER:-pfa}
-      POSTGRES_PASSWORD: ${PGPASSWORD:-pfa2026}
+      POSTGRES_PASSWORD: ${PGPASSWORD:?Definir PGPASSWORD dans .env (copier .env.example)}
       POSTGRES_DB: ${PGDATABASE:-photovoltaique}
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -43,9 +43,9 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Definir GRAFANA_ADMIN_PASSWORD dans .env}
       PGUSER: ${PGUSER:-pfa}
-      PGPASSWORD: ${PGPASSWORD:-pfa2026}
+      PGPASSWORD: ${PGPASSWORD:?Definir PGPASSWORD dans .env (copier .env.example)}
       PGDATABASE: ${PGDATABASE:-photovoltaique}
     volumes:
       - grafana_data:/var/lib/grafana
@@ -71,7 +71,7 @@ services:
       - "127.0.0.1:5050:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@pfa.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?Definir PGADMIN_PASSWORD dans .env}
     depends_on:
       - timescaledb
 volumes:
