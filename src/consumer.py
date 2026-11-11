@@ -1,27 +1,27 @@
 from collections import deque
 import json
 import math
-import os
 import signal
 
 import pandas as pd
 from kafka import KafkaConsumer, KafkaProducer
 from kafka.structs import OffsetAndMetadata, TopicPartition
 
+from config import (
+    KAFKA_BROKER, GROUP_ID, REQUEST_TIMEOUT_MS, DELAI_LIVRAISON_MS,
+    TOPIC_MESURES as TOPIC_IN, TOPIC_ALARMES as TOPIC_ALARMS, resume as resume_config,
+)
 from db import insert_measurement, insert_alarm, close_connection
 from detecteur import DetecteurPV
 
 
-KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
-TOPIC_IN = "measurements"
-TOPIC_ALARMS = "alarms"
-GROUP_ID = os.getenv("KAFKA_GROUP_ID", "pfa-detecteur")
+
 # Même seuil que le notebook : seules les mesures diurnes (GTI > 50 W/m²) sont scorées.
 # Sans ce filtre, un flux continu enverrait des données nocturnes aux modèles.
 FILTRE_GTI_MIN = 50
-# Délai maximal de livraison d'une alarme, nouvelles tentatives comprises. Au-delà,
-# le consumer s'arrête SANS committer : le message sera retraité au redémarrage.
-DELAI_LIVRAISON_MS = int(os.getenv("ALARM_DELIVERY_TIMEOUT_MS", "30000"))
+
+
+
 
 
 class TamponGlissant:
@@ -173,7 +173,7 @@ def run_consumer():
         acks="all",
         enable_idempotence=True,
         delivery_timeout_ms=DELAI_LIVRAISON_MS,
-        request_timeout_ms=10000,
+        request_timeout_ms=REQUEST_TIMEOUT_MS,
     )
 
     arret = {"demande": False}
@@ -186,6 +186,7 @@ def run_consumer():
     signal.signal(signal.SIGTERM, demander_arret)
 
     print(f"Consumer en écoute sur '{TOPIC_IN}' (groupe '{GROUP_ID}')...")
+    print(resume_config())
     stats = {"lues": 0, "scorees": 0, "alarmes": 0, "raisons": {}}
     try:
         while not arret["demande"]:
