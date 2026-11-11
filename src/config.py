@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-
 from dotenv import load_dotenv
 
 # Le même .env est lu par docker compose : une seule source de valeurs.
@@ -59,7 +58,7 @@ PG_HOST = _texte("PGHOST", "localhost")
 PG_PORT = _nombre("PGPORT", 5432, minimum=1)
 PG_DATABASE = _texte("PGDATABASE", "photovoltaique")
 PG_USER = _texte("PGUSER", "pfa")
-PG_PASSWORD = _texte("PGPASSWORD", "pfa2026")
+PG_PASSWORD = os.getenv("PGPASSWORD", "").strip() or None
 PG_CONNECT_TIMEOUT = _nombre("PGCONNECT_TIMEOUT", 5, minimum=1)
 
 # --- Cohérence entre valeurs ---
@@ -76,3 +75,15 @@ def resume():
     """Une ligne à afficher au démarrage de chaque composant."""
     return (f"Kafka {KAFKA_BROKER} | topics {TOPIC_MESURES} -> {TOPIC_ALARMES} "
             f"| groupe {GROUP_ID} | base {PG_USER}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}")
+
+
+
+
+
+def exiger_secrets():
+    """À appeler par tout composant qui se connecte à la base."""
+    manquants = [nom for nom, valeur in (("PGPASSWORD", PG_PASSWORD),) if not valeur]
+    if manquants:
+        raise ErreurConfiguration(
+            f"Variable obligatoire manquante : {', '.join(manquants)}. "
+            f"Copier .env.example en .env et y définir la valeur (voir README).")
