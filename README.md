@@ -93,12 +93,13 @@ cd pfa-photovoltaique
 
 # 1. Infrastructure: Kafka, TimescaleDB, Grafana, Kafka UI, pgAdmin
 docker compose up -d
+# 0. Local settings: copy the example file, then replace every "change-me" value
+cp .env.example .env
 
 # 2. Python environment
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-# Optional: copy .env.example to .env to change the broker, topics or database settings.
-# All components (consumer, replayer, docker compose) read the same values from src/config.py and .env.
+# All components (consumer, replayer, docker compose) read the same .env through src/config.py.
 # 3. Start the scoring consumer, then the replayer (two terminals)
 until python src/consumer.py; do echo "consumer stopped, restarting in 5 s"; sleep 5; done
 python src/replayer.py
@@ -113,7 +114,7 @@ python -m pytest tests/ -v
 
 | Service | URL |
 |---|---|
-| Grafana | http://localhost:3000 (`admin` / `admin`, change it) |
+| Grafana | http://localhost:3000 (`admin` / value of `GRAFANA_ADMIN_PASSWORD` in `.env`) |
 | Kafka UI | http://localhost:8090 |
 | pgAdmin | http://localhost:5050 |
 
