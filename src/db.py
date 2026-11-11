@@ -1,20 +1,21 @@
 import json
 import math
-import os
-
 import psycopg2
 from psycopg2.extras import Json
+from config import (PG_HOST, PG_PORT, PG_DATABASE, PG_USER, PG_PASSWORD,
+                    PG_CONNECT_TIMEOUT)
 
 DB_CONFIG = {
-    "host": os.getenv("PGHOST", "localhost"),
-    "port": int(os.getenv("PGPORT", 5432)),
-    "dbname": os.getenv("PGDATABASE", "photovoltaique"),
-    "user": os.getenv("PGUSER", "pfa"),
-    "password": os.getenv("PGPASSWORD", "pfa2026"),
+       "host": PG_HOST,
+    "port": PG_PORT,
+    "dbname": PG_DATABASE,
+    "user": PG_USER,
+    "password": PG_PASSWORD,
     # Sans délai, une base injoignable bloque le consumer indéfiniment ; Kafka
     # l'exclut alors du groupe (max_poll_interval_ms) et le commit échoue.
-    "connect_timeout": int(os.getenv("PGCONNECT_TIMEOUT", "5")),
+    "connect_timeout": PG_CONNECT_TIMEOUT,
     "options": "-c statement_timeout=10000",
+   
 }
 COLONNES_CAPTEUR = ("gti", "dti", "ta", "tpv", "pg", "ia", "ig", "va", "vg", "fg")
 
