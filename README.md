@@ -90,11 +90,11 @@ Requirements: Docker, Docker Compose, Python 3.10+.
 ```bash
 git clone https://github.com/mounjimallak-bit/pfa-photovoltaique.git
 cd pfa-photovoltaique
-
-# 1. Infrastructure: Kafka, TimescaleDB, Grafana, Kafka UI, pgAdmin
-docker compose up -d
 # 0. Local settings: copy the example file, then replace every "change-me" value
 cp .env.example .env
+# 1. Infrastructure: Kafka, TimescaleDB, Grafana, Kafka UI, pgAdmin
+docker compose up -d
+
 
 # 2. Python environment
 python -m venv .venv && source .venv/bin/activate
