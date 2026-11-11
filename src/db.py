@@ -3,8 +3,7 @@ import math
 import psycopg2
 from psycopg2.extras import Json
 from config import (PG_HOST, PG_PORT, PG_DATABASE, PG_USER, PG_PASSWORD,
-                    PG_CONNECT_TIMEOUT)
-
+                                       PG_CONNECT_TIMEOUT, exiger_secrets)
 DB_CONFIG = {
        "host": PG_HOST,
     "port": PG_PORT,
@@ -25,6 +24,7 @@ _conn = None
 def get_connection():
     global _conn
     if _conn is None or _conn.closed:
+        exiger_secrets()
         _conn = psycopg2.connect(**DB_CONFIG)
         _conn.autocommit = True
     return _conn
