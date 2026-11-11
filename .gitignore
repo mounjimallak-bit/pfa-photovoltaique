@@ -66,6 +66,8 @@ Thumbs.db
 
 # Env
 .env
+.env.*
+!.env.example
 
 # Système de détection déployé (~2,8 Mo au total) — versionné intégralement
 # pour qu'un simple clone suffise à rejouer le notebook sans réentraîner les
