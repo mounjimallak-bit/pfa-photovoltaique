@@ -1,8 +1,8 @@
 from collections import deque
 import json
+import math
 import os
 import signal
-import sys
 
 import pandas as pd
 from kafka import KafkaConsumer, KafkaProducer
@@ -19,6 +19,9 @@ GROUP_ID = os.getenv("KAFKA_GROUP_ID", "pfa-detecteur")
 # Même seuil que le notebook : seules les mesures diurnes (GTI > 50 W/m²) sont scorées.
 # Sans ce filtre, un flux continu enverrait des données nocturnes aux modèles.
 FILTRE_GTI_MIN = 50
+# Délai maximal de livraison d'une alarme, nouvelles tentatives comprises. Au-delà,
+# le consumer s'arrête SANS committer : le message sera retraité au redémarrage.
+DELAI_LIVRAISON_MS = int(os.getenv("ALARM_DELIVERY_TIMEOUT_MS", "30000"))
 
 
 class TamponGlissant:
@@ -26,8 +29,7 @@ class TamponGlissant:
 
     Le tampon est vidé dès qu'un écart dépasse gap_minutes : sinon on fabriquerait
     des transitions soir -> matin qui n'existent pas, la nuit n'étant pas mesurée.
-    Chaque point garde son offset Kafka, pour que le commit pointe sur le plus ancien
-    point du tampon et qu'un redémarrage reconstruise la fenêtre.
+    Chaque point garde son offset Kafka, pour qu'un redémarrage reconstruise la fenêtre.
     """
 
     def __init__(self, seq_len: int, gap_minutes: int):
@@ -47,8 +49,15 @@ class TamponGlissant:
             [m for _, _, m in self.points],
             index=pd.DatetimeIndex([t for _, t, _ in self.points]))
 
-    def offset_a_commiter(self):
-        return self.points[0][0]
+    def offset_a_commiter(self, offset_courant: int) -> int:
+        """Prochain offset à relire après un redémarrage (convention Kafka).
+
+        On ne garde que les seq_len - 1 derniers points : c'est exactement ce dont
+        la PROCHAINE fenêtre a besoin. Le point courant, déjà scoré, n'est donc pas
+        rescoré au redémarrage. Tampon vide : offset_courant + 1.
+        """
+        a_garder = list(self.points)[-(self.seq_len - 1):] if self.seq_len > 1 else []
+        return a_garder[0][0] if a_garder else offset_courant + 1
 
 
 def scorer(detecteur, fenetre):
@@ -58,7 +67,6 @@ def scorer(detecteur, fenetre):
     try:
         resultat = detecteur.predire_lot(fenetre)
     except ValueError as e:
-        # Ne plus avaler l'erreur en silence : elle est remontée au journal.
         return None, None, f"scoring impossible ({e})"
     if resultat.empty:
         return None, None, "aucune séquence complète"
@@ -72,29 +80,79 @@ def traiter_message(mesure, offset, tampon, detecteur):
     Retourne un dict : horodatage (None si invalide), score, anomalie,
     raison (None si scoré), offset_commit (offset à commiter une fois le message traité).
     """
-    def offset_a_commiter():
-        return tampon.offset_a_commiter() if tampon.points else offset
-
     try:
         horodatage = pd.Timestamp(mesure["time"])
         if pd.isna(horodatage):
             raise ValueError("horodatage vide")
     except (KeyError, TypeError, ValueError) as e:
         # Sans horodatage, la mesure ne peut être ni rangée ni scorée : on la signale
-        # et on avance l'offset, sinon le message serait relu et ferait planter le
-        # consumer à chaque redémarrage.
+        # sans faire planter le consumer.
         return dict(horodatage=None, score=None, anomalie=None,
-                    raison=f"horodatage invalide ({e})", offset_commit=offset_a_commiter())
+                    raison=f"horodatage invalide ({e})",
+                    offset_commit=tampon.offset_a_commiter(offset))
 
     gti = mesure.get("GTI")
     if gti is None or pd.isna(gti) or not gti > FILTRE_GTI_MIN:
         return dict(horodatage=horodatage, score=None, anomalie=None,
-                    raison="nuit ou irradiance absente", offset_commit=offset_a_commiter())
+                    raison="nuit ou irradiance absente",
+                    offset_commit=tampon.offset_a_commiter(offset))
 
     fenetre = tampon.ajouter(offset, horodatage, {c: mesure.get(c) for c in detecteur.features})
     score, est_anomalie, raison = scorer(detecteur, fenetre)
     return dict(horodatage=horodatage, score=score, anomalie=est_anomalie,
-                raison=raison, offset_commit=offset_a_commiter())
+                raison=raison, offset_commit=tampon.offset_a_commiter(offset))
+
+
+def sans_nan(mesure: dict) -> dict:
+    """Remplace NaN et infinis par None : JSON standard, accepté par JSONB."""
+    return {k: (None if isinstance(v, float) and not math.isfinite(v) else v)
+            for k, v in mesure.items()}
+
+
+def publier_alarme(producer, mesure, score):
+    """Publie l'alarme et ATTEND l'accusé de réception du broker.
+
+    Lève une exception si la livraison échoue ou dépasse le délai : l'appelant
+    ne doit alors pas committer l'offset.
+    """
+    future = producer.send(
+        TOPIC_ALARMS,
+        key=str(mesure["time"]).encode("utf-8"),
+        value={**sans_nan(mesure), "score_fusion": score},
+    )
+    return future.get(timeout=DELAI_LIVRAISON_MS / 1000 + 5)
+
+
+def traiter_et_persister(message, tampon, detecteur, consumer, producer, stats):
+    """Un message de bout en bout. Ordre : base, puis Kafka (avec accusé), puis commit.
+
+    Toute exception remonte AVANT le commit : le message sera relu au redémarrage
+    (au moins une fois). La base est idempotente (ON CONFLICT) ; le topic alarms
+    peut recevoir un doublon, identifiable par sa clé (l'horodatage).
+    """
+    mesure = message.value
+    r = traiter_message(mesure, message.offset, tampon, detecteur)
+    stats["lues"] += 1
+    if r["score"] is not None:
+        stats["scorees"] += 1
+    if r["raison"] is not None:
+        stats["raisons"][r["raison"]] = stats["raisons"].get(r["raison"], 0) + 1
+
+    if r["horodatage"] is not None:
+        insert_measurement({k.lower(): v for k, v in mesure.items()},
+                           r["score"], r["anomalie"])
+
+    if r["anomalie"]:
+        insert_alarm(mesure, r["score"])
+        publier_alarme(producer, mesure, r["score"])
+        stats["alarmes"] += 1
+        print(f"ALARME {r['horodatage']} | score {r['score']:.4f} "
+              f"(seuil {detecteur.seuil:.4f})")
+
+    consumer.commit({
+        TopicPartition(message.topic, message.partition):
+            OffsetAndMetadata(r["offset_commit"], ""),
+    })
 
 
 def run_consumer():
@@ -111,55 +169,43 @@ def run_consumer():
     )
     producer = KafkaProducer(
         bootstrap_servers=KAFKA_BROKER,
-        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+        value_serializer=lambda v: json.dumps(v, allow_nan=False).encode("utf-8"),
+        acks="all",
+        enable_idempotence=True,
+        delivery_timeout_ms=DELAI_LIVRAISON_MS,
+        request_timeout_ms=10000,
     )
 
-    def arreter(*_):
-        print("\nArrêt demandé — fermeture propre.")
-        producer.flush()
-        consumer.close()
-        close_connection()
-        sys.exit(0)
+    arret = {"demande": False}
 
-    signal.signal(signal.SIGINT, arreter)
-    signal.signal(signal.SIGTERM, arreter)
+    def demander_arret(*_):
+        print("\nArrêt demandé : fin du message en cours, puis fermeture.")
+        arret["demande"] = True
+
+    signal.signal(signal.SIGINT, demander_arret)
+    signal.signal(signal.SIGTERM, demander_arret)
 
     print(f"Consumer en écoute sur '{TOPIC_IN}' (groupe '{GROUP_ID}')...")
-    n_lues = n_scorees = n_alarmes = 0
-
-    raisons = {}
-    for message in consumer:
-        mesure = message.value
-        n_lues += 1
-
-        r = traiter_message(mesure, message.offset, tampon, detecteur)
-        if r["score"] is not None:
-            n_scorees += 1
-        if r["raison"] is not None:
-            raisons[r["raison"]] = raisons.get(r["raison"], 0) + 1
-
-        if r["horodatage"] is not None:
-            insert_measurement({k.lower(): v for k, v in mesure.items()},
-                               r["score"], r["anomalie"])
-
-        if r["anomalie"]:
-            n_alarmes += 1
-            producer.send(TOPIC_ALARMS, value={**mesure, "score_fusion": r["score"]})
-            insert_alarm(mesure, r["score"])
-            print(f"ALARME {r['horodatage']} | score {r['score']:.4f} "
-                  f"(seuil {detecteur.seuil:.4f})")
-
-        # Commit en dernier, une fois la mesure ET l'alarme durables : commiter
-        # avant l'envoi de l'alarme la perdrait définitivement en cas de crash
-        # entre les deux, le message n'étant plus redélivré.
-        consumer.commit({
-            TopicPartition(message.topic, message.partition):
-                OffsetAndMetadata(r["offset_commit"], None),
-        })
-
-        if n_lues % 100 == 0:
-            print(f"{n_lues} mesures lues | {n_scorees} scorées "
-                  f"| {n_lues - n_scorees} non scorables | {n_alarmes} alarmes | {raisons}")
+    stats = {"lues": 0, "scorees": 0, "alarmes": 0, "raisons": {}}
+    try:
+        while not arret["demande"]:
+            for _, messages in consumer.poll(timeout_ms=1000).items():
+                for message in messages:
+                    traiter_et_persister(message, tampon, detecteur, consumer, producer, stats)
+                    if stats["lues"] % 100 == 0:
+                        print(f"{stats['lues']} mesures lues | {stats['scorees']} scorées "
+                              f"| {stats['alarmes']} alarmes | {stats['raisons']}")
+                    if arret["demande"]:
+                        break
+                if arret["demande"]:
+                    break
+    finally:
+        # Ne jamais masquer l'exception d'origine par une erreur de fermeture.
+        for fermer in (lambda: producer.close(timeout=10), consumer.close, close_connection):
+            try:
+                fermer()
+            except Exception as e:
+                print(f"Erreur à la fermeture (ignorée) : {e!r}")
 
 
 if __name__ == "__main__":
