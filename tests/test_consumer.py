@@ -228,7 +228,7 @@ def test_publier_alarme_attend_l_accuse_et_cle_horodatage():
     p = _Producer()
     consumer.publier_alarme(p, {"time": "2022-05-01T10:00:00+00:00", "GTI": 300.0, "Ig": float("nan")}, 0.97)
     topic, cle, valeur = p.envois[0]
-    assert topic == "alarms" and cle == b"2022-05-01T10:00:00+00:00"
+    assert topic == consumer.TOPIC_ALARMS and cle == b"2022-05-01T10:00:00+00:00"
     assert valeur["Ig"] is None and valeur["score_fusion"] == 0.97
     with pytest.raises(TimeoutError):
         consumer.publier_alarme(_Producer(TimeoutError("pas d'accusé")), {"time": "t"}, 0.9)
