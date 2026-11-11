@@ -130,7 +130,7 @@ def test_message_sans_horodatage_ignore(detecteur):
         assert r["horodatage"] is None
         assert r["score"] is None
         assert r["raison"] and "horodatage" in r["raison"]
-        assert r["offset_commit"] == 42
+        assert r["offset_commit"] == 43, "tampon vide : on committe offset + 1 (convention Kafka)"
 
 
 def test_nuit_ignoree_sans_toucher_au_tampon(detecteur, replay):
@@ -141,7 +141,7 @@ def test_nuit_ignoree_sans_toucher_au_tampon(detecteur, replay):
         r = consumer.traiter_message(mesure, 7, tampon, detecteur)
         assert r["score"] is None
         assert r["raison"] == "nuit ou irradiance absente"
-        assert r["offset_commit"] == 7
+        assert r["offset_commit"] == 8, "tampon vide : on committe offset + 1 (convention Kafka)"
     assert len(tampon.points) == 0
 
 
@@ -185,6 +185,81 @@ def test_tampon_se_vide_apres_une_nuit():
     assert len(tampon.points) == 3
     assert tampon.ajouter(3, t0 + pd.Timedelta(hours=12), {"x": 9}) is None
     assert len(tampon.points) == 1
+
+
+# --- Garanties de livraison (ajoutées avec la correction de la durabilité des alarmes) ---
+
+def test_redemarrage_ne_rescore_pas_le_dernier_point(detecteur, replay):
+    """Après un arrêt propre, la relecture reconstruit la fenêtre sans rescorer
+    le dernier point traité, puis le point suivant obtient le même score."""
+    rows = replay.to_dict("records")
+    ref, _ = _rejouer(rows, detecteur)
+    k = next(i for i, r in enumerate(ref) if r["score"] is not None and i > 20)
+    reprise = ref[k]["offset_commit"]
+    assert reprise <= k, "la reprise doit relire une partie de la fenêtre"
+    res, _ = _rejouer(rows[reprise:k + 2], detecteur, offset_depart=reprise)
+    assert res[k - reprise]["score"] is None, "le dernier point traité ne doit pas être rescoré"
+    assert res[k + 1 - reprise]["score"] == pytest.approx(ref[k + 1]["score"], abs=1e-9)
+
+
+class _Future:
+    def __init__(self, exc=None): self.exc = exc
+    def get(self, timeout=None):
+        if self.exc: raise self.exc
+        return "ok"
+
+
+class _Producer:
+    def __init__(self, exc=None): self.exc, self.envois = exc, []
+    def send(self, topic, key=None, value=None):
+        self.envois.append((topic, key, value)); return _Future(self.exc)
+
+
+class _Consumer:
+    def __init__(self): self.commits = []
+    def commit(self, offsets): self.commits.append(offsets)
+
+
+class _Message:
+    def __init__(self, offset, value): self.topic, self.partition, self.offset, self.value = "measurements", 0, offset, value
+
+
+def test_publier_alarme_attend_l_accuse_et_cle_horodatage():
+    p = _Producer()
+    consumer.publier_alarme(p, {"time": "2022-05-01T10:00:00+00:00", "GTI": 300.0, "Ig": float("nan")}, 0.97)
+    topic, cle, valeur = p.envois[0]
+    assert topic == "alarms" and cle == b"2022-05-01T10:00:00+00:00"
+    assert valeur["Ig"] is None and valeur["score_fusion"] == 0.97
+    with pytest.raises(TimeoutError):
+        consumer.publier_alarme(_Producer(TimeoutError("pas d'accusé")), {"time": "t"}, 0.9)
+
+
+def test_pas_de_commit_si_la_publication_echoue(detecteur, replay, batch, monkeypatch):
+    """Si Kafka ne confirme pas l'alarme, l'offset n'est PAS committé."""
+    monkeypatch.setattr(consumer, "insert_measurement", lambda *a, **k: None)
+    monkeypatch.setattr(consumer, "insert_alarm", lambda *a, **k: None)
+    rows = replay.to_dict("records")
+    alarmes = set(batch.index[batch["anomalie"] == 1])
+    tampon = consumer.TamponGlissant(detecteur.seq_len, detecteur.gap_min)
+    c, stats = _Consumer(), {"lues": 0, "scorees": 0, "alarmes": 0, "raisons": {}}
+    for i, row in enumerate(rows):
+        msg = _Message(i, dict(row))
+        if pd.Timestamp(row["time"]) in alarmes:
+            avant = len(c.commits)
+            with pytest.raises(ConnectionError):
+                consumer.traiter_et_persister(msg, tampon, detecteur, c,
+                                              _Producer(ConnectionError("broker perdu")), stats)
+            assert len(c.commits) == avant, "aucun commit après un échec de publication"
+            return
+        consumer.traiter_et_persister(msg, tampon, detecteur, c, _Producer(), stats)
+    pytest.fail("la tranche devait contenir une alarme")
+
+
+def test_sans_nan_produit_du_json_standard():
+    import json
+    propre = consumer.sans_nan({"a": float("nan"), "b": float("inf"), "c": 1.5, "d": "x"})
+    assert propre == {"a": None, "b": None, "c": 1.5, "d": "x"}
+    json.dumps(propre, allow_nan=False)
 
 
 if __name__ == "__main__":
