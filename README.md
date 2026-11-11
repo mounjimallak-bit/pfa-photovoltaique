@@ -81,7 +81,8 @@ flowchart LR
 - Few fault episodes overall (4 in validation, 3 in test), all staged shading, and a single installation: the model must be retrained for another site.
 - The operating point depends on the seeds: retraining with five other seeds moves the threshold and lowers test precision.
 - The replayer streams historical data; it is not connected to physical sensors.
-
+- Delivery is at-least-once. Database writes are idempotent (upsert by timestamp); the `alarms` topic can receive a duplicate after a crash between publication and offset commit, identifiable by its key (the measurement timestamp).
+- Kafka runs without a persistent volume: `docker compose down` clears the alarms topic; the database is the system of record.
 ## Quick start
 
 Requirements: Docker, Docker Compose, Python 3.10+.
@@ -98,10 +99,10 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # 3. Start the scoring consumer, then the replayer (two terminals)
-python src/consumer.py
+until python src/consumer.py; do echo "consumer stopped, restarting in 5 s"; sleep 5; done
 python src/replayer.py
 ```
-
+The consumer stops on purpose, without committing, if the database or Kafka does not confirm a write; the loop restarts it and the message is processed again.
 Tests of the consumer's message handling (no Kafka or database needed; they replay part of the test partition and compare with the batch scores):
 
 ```bash
