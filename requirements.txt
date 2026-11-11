@@ -26,3 +26,4 @@ jupyter>=1.0
 # --- Streaming & base de données (src/consumer.py, replayer.py, db.py) ---
 kafka-python==3.0.13
 psycopg2-binary>=2.9
+python-dotenv>=1.0
