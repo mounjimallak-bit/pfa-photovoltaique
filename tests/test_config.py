@@ -71,3 +71,16 @@ def test_aucune_configuration_en_dur_dans_les_composants():
         texte = (REPO / "src" / nom).read_text(encoding="utf-8")
         assert "os.getenv" not in texte, f"{nom} lit une variable sans passer par config.py"
         assert "localhost:9092" not in texte, f"{nom} contient une adresse Kafka en dur"
+
+
+def test_mot_de_passe_sans_valeur_par_defaut(charger):
+    c = charger()
+    assert c.PG_PASSWORD is None
+    with pytest.raises(ValueError, match="PGPASSWORD"):
+        c.exiger_secrets()
+
+
+def test_mot_de_passe_defini_et_jamais_affiche(charger):
+    c = charger(PGPASSWORD="valeur-de-test")
+    c.exiger_secrets()
+    assert "valeur-de-test" not in c.resume()
