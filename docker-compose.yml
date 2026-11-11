@@ -5,7 +5,7 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
     ports:
-      - "2181:2181"
+      - "127.0.0.1:2181:2181"
 
   # --- Kafka ---
   kafka:
@@ -13,7 +13,7 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - "127.0.0.1:9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -27,7 +27,7 @@ services:
   timescaledb:
     image: timescale/timescaledb:latest-pg16
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: ${PGUSER:-pfa}
       POSTGRES_PASSWORD: ${PGPASSWORD:-pfa2026}
@@ -40,7 +40,7 @@ services:
   grafana:
     image: grafana/grafana:10.4.0
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
@@ -59,7 +59,7 @@ services:
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     ports:
-      - "8090:8080"
+      - "127.0.0.1:8090:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: pfa
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
@@ -68,7 +68,7 @@ services:
   pgadmin:
     image: dpage/pgadmin4:latest
     ports:
-      - "5050:80"
+      - "127.0.0.1:5050:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@pfa.com
       PGADMIN_DEFAULT_PASSWORD: admin
