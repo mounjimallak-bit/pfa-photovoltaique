@@ -24,5 +24,5 @@ seaborn>=0.13
 jupyter>=1.0
 
 # --- Streaming & base de données (src/consumer.py, replayer.py, db.py) ---
-kafka-python>=2.0
+kafka-python==3.0.13
 psycopg2-binary>=2.9
