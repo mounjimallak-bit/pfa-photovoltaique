@@ -12,8 +12,7 @@ from kafka import KafkaProducer
 
 RACINE = Path(__file__).resolve().parents[1]
 
-KAFKA_BROKER = "localhost:9092"
-TOPIC = "measurements"
+from config import KAFKA_BROKER, DELAI_REPLAY_S, TOPIC_MESURES as TOPIC, resume as resume_config
 
 # Extrait versionné de la partition de test (~2 975 points), rejouable depuis un
 # clone nu. Il est dérivé de data/df_etude_split.csv, produit par le § 5.3 du
@@ -50,7 +49,7 @@ def create_producer() -> KafkaProducer:
     )
 
 
-def replay(delay: float = 1.0):
+def replay(delay: float = DELAI_REPLAY_S):
     """
     Publie chaque mesure de la partition de test sur Kafka.
     delay = secondes entre deux messages (simuler le temps réel).
@@ -63,6 +62,7 @@ def replay(delay: float = 1.0):
     df = charger_partition()
 
     print(f"Replayer : {len(df)} mesures ({PARTITION}) à envoyer sur '{TOPIC}'")
+    print(resume_config())
 
     for _, row in df.iterrows():
         message = row.to_dict()
