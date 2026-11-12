@@ -118,6 +118,23 @@ python -m pytest tests/ -v
 | Kafka UI | http://localhost:8090 |
 | pgAdmin | http://localhost:5050 |
 
+## Reproducing the results
+
+| Level | What it reproduces | How | Time |
+|---|---|---|---|
+| 1 | Every number of the notebook (sections 2 to 17), from the versioned caches and models | Run All with the default flags | ~5 to 15 min (CPU) |
+| 2 | Tuning grids, final models, seed sensitivity, leave-one-incident-out | Set `FORCER_RECALCUL`, `RUN_TRAINING`, `RUN_RETRAIN` or `RUN_LOIO` to `True` | 1 to 9 h each |
+| 3 | Section 1 and the 5-minute merge | Download the two Zenodo CSVs into `data/` | +2.3 GB |
+
+The committed notebook is a single run (cells numbered 1 to 106), executed with the exact
+environment that produced `model_final/` (`requirements-notebook.txt`): the recomputed rank
+references match the delivered ones bit for bit. A Run All never modifies `model_final/`: it checks
+references, threshold and test decisions against the delivered files (`ECRIRE_MODEL_FINAL = False`).
+`model_final/MANIFEST.json` records how the models were trained (parameters, seeds, versions, data)
+and the SHA-256 of every versioned artefact; `tests/test_manifeste.py` checks it. Retraining
+(level 2) is deterministic on a given machine and library versions, but does not reproduce the
+delivered weights bit for bit: section 16.7 measures the seed-to-seed variation this implies.
+
 ## Project structure
 
 ```
