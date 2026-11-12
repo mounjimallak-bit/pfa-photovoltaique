@@ -1,0 +1,58 @@
+# Continuous integration of pfa-photovoltaique.
+# Runs the test suite (29 tests: configuration, consumer scoring, artefact manifest) on every push
+# to main and every pull request, in two environments:
+#   - requirements.txt           : the minimum versions documented for the project;
+#   - requirements-notebook.txt  : the exact versions of the committed notebook run and of model_final/.
+# No Kafka, database, Docker or Zenodo download is needed: the tests use the versioned
+# model_final/ and data/replay_test.csv.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    name: pytest (${{ matrix.requirements }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - requirements: requirements.txt
+            extra: pytest
+          - requirements: requirements-notebook.txt
+            extra: python-dotenv pytest
+    env:
+      TF_CPP_MIN_LOG_LEVEL: "2"
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: ${{ matrix.requirements }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r ${{ matrix.requirements }} ${{ matrix.extra }}
+
+      - name: Record installed versions
+        run: python -m pip freeze
+
+      - name: Run the tests
+        run: python -m pytest tests/ -v
