@@ -1,0 +1,28 @@
+# Project dependencies — tested with Python 3.10.11.
+# Minimum versions: install the project with recent libraries.
+# For the exact environment of the committed notebook run and of model_final/,
+# use requirements-notebook.txt instead.
+
+# --- Data ---
+pandas>=2.0
+numpy>=1.26
+
+# --- Deep learning ---
+# model_final/ uses the .keras v3 format: TensorFlow >= 2.16 (the first release
+# shipping Keras 3) is required; older versions cannot load the models.
+tensorflow>=2.16
+
+# --- Classical ML ---
+scikit-learn>=1.3
+scipy>=1.11
+
+# --- Visualisation & notebook ---
+matplotlib>=3.7
+seaborn>=0.13
+# Provides ipykernel, IPython.display and nbconvert.
+jupyter>=1.0
+
+# --- Streaming & database (src/consumer.py, replayer.py, db.py, config.py) ---
+kafka-python==3.0.13
+psycopg2-binary>=2.9
+python-dotenv>=1.0
