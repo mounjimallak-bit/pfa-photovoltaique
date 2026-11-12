@@ -22,11 +22,42 @@
   "data": {
     "source": "Zenodo, record 7358042",
     "raw_files_md5": {
-      "dt1_solar_and_meteorological_measurement.csv": "TO FILL from the Zenodo page",
-      "dt2_electrical_production_inverter_1_with_faults.csv": "TO FILL from the Zenodo page"},
+      "dt1_solar_and_meteorological_measurement.csv": "Thttps://zenodo.org/records/7358042",
+      "dt2_electrical_production_inverter_1_with_faults.csv": "https://zenodo.org/records/7358042"},
     "merged_cache": "data/merged_5min_day.csv: 5-min resampling, inner join, GTI > 50 filter",
     "split": {"period": ["2021-10-28 12:35 UTC", "2022-05-26 07:40 UTC"], "cut_train": "2022-03-22", "cut_val": "2022-04-28",
       "train": "10863 obs, 10 incidents", "val": "4219 obs, 4 incidents", "test": "2975 obs, 3 incidents (F3.1)"}
   },
-  "empreintes_sha256": { "…": "paste here the output of python tests/test_manifeste.py" }
+   "empreintes_sha256": {
+    "data/ae_learning_curve.csv": "6eec6109cef03d7ed7a505009530b373e3827e855d76361eaed2a17c37103ae7",
+    "data/loio_scores.csv.gz": "ded6d1b8833f09e8dc8516f419cec75d9d8eb92ec675cb812d7dc55eb1d00c9a",
+    "data/merged_5min_day.csv": "2d748e8191a4c95540fb25f31890c9ecbe56c832182aa7fcdee1ae978f1096db",
+    "data/replay_test.csv": "8919729b93ff1a8cd748c152cd0e37ea7195d1e8f656b58f7a70081eaa86451a",
+    "data/score_ae_val.npy": "3ab3a312fed655adc207134c78166581c58f0a23bf6fb7fda3372ff506c70481",
+    "data/score_lstm_single.csv": "67246e15b4b35faeb79a890ee3bcbaa31f565ba2939bdd3a2b499aba8bee90d7",
+    "data/score_lstm_va.npy": "1ab202767fd47bf068cc0d484e2a0c11dd2f27decdf41889f261c94ae7ddce99",
+    "data/score_lstm_viabilite.csv": "86002e73e0f35a1524611616e9959b0cb9251a423c70b4df97c5dac8acb5c4d5",
+    "data/sensibilite_seeds_5_9.json": "bed2bb0a0b49a5a9c46ae19e173012f6d510fa885741d74be4b24ab0bb5bd613",
+    "data/tuning_ae_features.csv": "e553952209f63c4905b0a22bc8017c617c9c339e873b7ba462831e84877a1a15",
+    "data/tuning_ae_hyperparams_top10.csv": "3643cada9c6bd144da9a3fed0d16f88fcebd29f72d7ef57b92a60e9a30f60a19",
+    "data/tuning_if_top.csv": "eed015ac84105d8c4955e7cbb017f32d54810c5066a24483b62545b0f41da194",
+    "data/tuning_lstm_phaseA.csv": "137c236b4f838e5390b4e14d1e3874d7313f0f7d25feadc06e9cc822921ce281",
+    "data/tuning_lstm_phaseB.csv": "0659aa5c790f929fd82f12e4c1af81533bf7ad741a4919a065828f1b5a10e311",
+    "model_final/ae/ae_0.keras": "6a34b5b4758cedd43c90bb0b45e8b0b3bde9fcb832aa77ebca7aecc8fe39e830",
+    "model_final/ae/ae_1.keras": "17c6abf27e74ffa879e6f92e15c6c2da151a5ccb0e00918d98c79f9b935911ef",
+    "model_final/ae/ae_2.keras": "6c63405143964af855a9ec2ba3f47d21c201ec0750ac545f93754bd970f3da05",
+    "model_final/ae/ae_3.keras": "bddcbddb58044524dd6700110471146ac3345d4588450e6fd1390acd532bbaf7",
+    "model_final/ae/ae_4.keras": "6cef476b4458486c89822aeddfb2eca956ad445634169a0f81ef4a62ceb9263c",
+    "model_final/config.json": "e9bb4e5d4ebfde620d47d9012dc718e259ccefb9c695a3d910d82e8ea4b01792",
+    "model_final/lstm/lstm_0.keras": "0c084522bd2a061f74a7f0e0e87df76b20414e7f7adf6b1b82018db7e1b71672",
+    "model_final/lstm/lstm_1.keras": "b41a0f473990b166338d0f93e1e3c73a5506ee4f431e36f7db61bea0280c1fdc",
+    "model_final/lstm/lstm_2.keras": "5b96d92d57630353d2cea4379069645fea564a5f5df7dbeaaf0a0ac770b8900b",
+    "model_final/lstm/lstm_3.keras": "819a1c21881af7368645e2a173071463689a793b6163c45bb1e17773ca5bd7e6",
+    "model_final/lstm/lstm_4.keras": "81d20b605b5b608aad8936b4abfcedc37e4f89c817949c69c8fcb5f180e3609e",
+    "model_final/predictions_test.csv": "ae1c8d21df6d1e419e1dafed3dc0bc33cba10e5396fa74f03bcabcd256d576d6",
+    "model_final/ref_score_ae.npy": "0ff2aa366a30c1278642e79933f03bcb822f6cffe13fb77be0d4e76456d402bb",
+    "model_final/ref_score_lstm.npy": "bdf5b462b5ece535f60d6b5d40353452e45cf8e7e157bd8a4ef29ad0bb797faa",
+    "model_final/scaler_ae.pkl": "f26f519b6f9fdb32283540b90c741a0e0ad07c06fe4194efe635852c8431bfc4",
+    "model_final/scaler_lstm.pkl": "62713a4fd6bd136c11725877093bf7d47d5469d095ed03504252741f3ec3bb82"
+  }
 }
