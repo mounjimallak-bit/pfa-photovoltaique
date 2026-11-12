@@ -100,7 +100,7 @@ Daily counts are overdispersed (variance 1.5 times the mean). A rate must be rep
 
 ## 5. Data acquisition, in order of cost
 
-1. **The control inverter of the same dataset.** The data descriptor reports a second inverter whose panels were never faulted. As a same-weather reference, it directly targets the low-sun and winter false alarms. Cost: none, if the file is in the published record (to be checked).
+1. **The control inverter of the same dataset.** The data descriptor reports a second inverter whose panels were never faulted. As a same-weather reference, it directly targets the low-sun and winter false alarms. Cost: none: the file is in the published record (`dt3_electrical_production_inverter_2.csv`), and `analysis/control_inverter.py` shows that it sees the same deficit as the faulted inverter at the winter alarms.
 2. **Other versions of the same record.** The database was announced as still being updated: later versions may contain further campaigns and a second winter.
 3. **Public multi-site data without fault labels**, such as NREL PVDAQ (over 160 systems): suitable for E2 (false-alarm rates across sites and seasons), not for detection.
 4. **Public labelled fault data from other set-ups**, such as GPVS-Faults (16 laboratory experiments, 7 fault types, sampling every ~10 µs): fault-type diversity after aggregation to the same time scale, but under laboratory conditions; results must be reported separately, never pooled.

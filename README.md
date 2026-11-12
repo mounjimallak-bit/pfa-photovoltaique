@@ -79,6 +79,7 @@ flowchart LR
 - **Dawn points decide the scores.** The LSTM needs six consecutive points, so the first five points of each day are never scored, by any method in the comparison. These are mostly healthy dawn points with low sun. Scored on all test points, kNN drops from 0.88 to 0.39 and the dense autoencoder alone from 0.75 to 0.34. In the deployed system the LSTM window therefore acts as an implicit dawn mask.
 - **Seasons.** Training covers late spring and summer only. On the 10.5 fault-free months after the study period, the deployed threshold raises about 2.6 false-alarm events a week overall, and 4–11 a week from June to September (austral winter).
 - On validation, recall plateaus around 0.85: beyond it, precision falls to the baseline.
+- **Why winter alarms happen.** Most winter alarms occur under clear sky with a low sun, at the same time from day to day. The dataset's fault-free control inverter sees the same deficit at the same moments: at the alarms, the production ratio between the two inverters stays at its healthy value (1.02–1.05), whereas real faults drop it to 0.00–0.85. The alarms therefore come from a cause common to both arrays (low-sun geometry, and an irradiance sensor that under-reads in the afternoon), not from the faulted array, on conditions absent from the October–March training data. Rolling recalibration and suppressing out-of-domain days were evaluated and rejected because they hide real faults. A differential signal between the two inverters is the most promising fix (`analysis/control_inverter.py`).
 - **The threshold is the most label-dependent choice.** All 73 test fault points score between 0.88 and 0.969; the deployed threshold (0.946, F2 on validation) sits just below. A label-free rule flagging 2% of unlabelled validation, or a budget of one alarm event per week, detects none of the three test episodes; a budget of two events per week detects all three.
 - **Validation scores are optimistic.** Features, hyperparameters, fusion and threshold were all chosen on the same four validation incidents (over 130 configurations compared), so validation metrics are post-selection estimates. The leave-one-incident-out study (section 17) is the less biased evidence; its April folds share incidents with the selection.
 - Few fault episodes overall (4 in validation, 3 in test), all staged shading, and a single installation: the model must be retrained for another site.
@@ -149,7 +150,7 @@ delivered weights bit for bit: section 16.7 measures the seed-to-seed variation 
 │   └── db.py             TimescaleDB access
 ├── model_final/          trained models, scalers, reference scores, config.json
 ├── notebooks/final.ipynb full analysis: EDA, ablations, tuning, evaluation
-├── analysis/             read-only diagnostics (knn_vs_ensemble.py, sample_size.py)
+├── analysis/             read-only diagnostics (knn_vs_ensemble.py, sample_size.py, control_inverter.py: needs dt3 from Zenodo)
 ├── docs/                 experimental design and sample size considerations
 ├── tests/                consumer message handling vs batch scores
 ├── docker/               SQL schema and migrations

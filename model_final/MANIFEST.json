@@ -22,8 +22,9 @@
   "data": {
     "source": "Zenodo, record 7828879 (version 3); Graillet et al., Data in Brief 46 (2023) 108723",
     "raw_files_md5": {
-      "dt1_solar_and_meteorological_measurement.csv": "not recorded (download from https://zenodo.org/records/7828879)",
-      "dt2_electrical_production_inverter_1_with_faults.csv": "not recorded (download from https://zenodo.org/records/7828879)"},
+      "dt1_solar_and_meteorological_measurement.csv": "471c7408a65fcb304a3dc037ba2a5a24",
+      "dt2_electrical_production_inverter_1_with_faults.csv": "79f7ca4af39347cf890b47f2b541e5f5",
+      "dt3_electrical_production_inverter_2.csv": "5c8f9325643556d1487db20dc6b77cfb"},
     "merged_cache": "data/merged_5min_day.csv: 5-min resampling, inner join, GTI > 50 filter",
     "split": {"period": ["2021-10-28 12:35 UTC", "2022-05-26 07:40 UTC"], "cut_train": "2022-03-22", "cut_val": "2022-04-28",
       "train": "10863 obs, 10 incidents", "val": "4219 obs, 4 incidents", "test": "2975 obs, 3 incidents (F3.1)"}
