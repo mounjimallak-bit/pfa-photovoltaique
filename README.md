@@ -43,7 +43,7 @@ PR-AUC on test is **~30× the random baseline** (anomaly prevalence 2.6%). ROC-A
 
 ## Data
 
-Public dataset from [Zenodo, record 7358042](https://zenodo.org/records/7358042): a 4 kW domestic PV installation in La Réunion, with meteorological and electrical measurements and labelled shading faults (uniform, partial on 1 to 3 modules, partial on part of a module, intermittent). It was provided by the internship supervisor.
+Public dataset from [Zenodo, record 7828879](https://zenodo.org/records/7828879) (version 3), described in Graillet et al., "Electrical production data of a domestic grid-connected rooftop PV plant in normal and shading faults conditions associated with solar and meteorological data in a tropical climate", *Data in Brief* 46 (2023) 108723, [doi:10.1016/j.dib.2022.108723](https://doi.org/10.1016/j.dib.2022.108723): a 4 kW domestic PV installation in La Réunion, with meteorological and electrical measurements and labelled shading faults (uniform, partial on 1 to 3 modules, partial on part of a module, intermittent). It was provided by the internship supervisor.
 
 The two raw CSV files (2.3 GB) are not versioned. Only their 5-minute merge, `data/merged_5min_day.csv`, is in the repository, and the notebook reloads it automatically. To rerun the raw-data sections, download these two files into `data/`:
 
@@ -148,6 +148,7 @@ delivered weights bit for bit: section 16.7 measures the seed-to-seed variation 
 │   └── db.py             TimescaleDB access
 ├── model_final/          trained models, scalers, reference scores, config.json
 ├── notebooks/final.ipynb full analysis: EDA, ablations, tuning, evaluation
+├── analysis/             read-only diagnostics (knn_vs_ensemble.py: why kNN matches the ensemble)
 ├── tests/                consumer message handling vs batch scores
 ├── docker/               SQL schema and migrations
 ├── grafana/              provisioned dashboard and datasource
