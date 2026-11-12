@@ -1,0 +1,32 @@
+{
+  "description": "Provenance of the deployed system (model_final/) and of the versioned caches in data/.",
+  "models": {
+    "training_date": "2026-08-07 (date_saved field of the .keras files)",
+    "code": "notebooks/final.ipynb, section 13, with RUN_TRAINING = True",
+    "environment": {"python": "3.10.11", "tensorflow": "2.21.0", "keras": "3.12.1",
+      "numpy": "2.2.6", "pandas": "2.2.2", "scikit-learn": "1.5.1",
+      "note": "same versions as the committed notebook run, which reproduces the rank references bit for bit"},
+    "code_commit_at_training": "not recorded",
+    "seeds": {"ae": [0, 1, 2, 3, 4], "lstm": [0, 1, 2, 3, 4],
+      "note": "tf.random.set_seed + np.random.seed at training time: not bit-reproducible under Keras 3; the notebook now uses keras.utils.set_random_seed + deterministic ops for future retraining"},
+    "training_data": "train partition (up to 2022-03-22), healthy rows (Fault == 0), 6 complete features",
+    "ae": {"architecture": "Dense(4, relu) -> Dense(6, sigmoid)", "optimizer": "Adam(lr=1e-3)", "loss": "mse",
+      "max_epochs": 200, "batch_size": 64, "validation_split": 0.15,
+      "early_stopping": {"monitor": "val_loss", "patience": 15, "restore_best_weights": true}},
+    "lstm": {"sequences": "6-point windows, never spanning a night (gap > 7 min)",
+      "architecture": "LSTM(64, tanh) -> Dense(16, relu) -> RepeatVector(6) -> LSTM(64, tanh, return_sequences) -> TimeDistributed(Dense(6, sigmoid))",
+      "optimizer": "Adam(lr=3e-3)", "loss": "mse", "max_epochs": 400, "batch_size": 64, "validation_split": 0.15,
+      "early_stopping": {"monitor": "val_loss", "patience": 25, "restore_best_weights": true}},
+    "scalers": "MinMaxScaler fitted on the same rows; scaler_ae verified identical to a recomputation from the data"
+  },
+  "data": {
+    "source": "Zenodo, record 7358042",
+    "raw_files_md5": {
+      "dt1_solar_and_meteorological_measurement.csv": "TO FILL from the Zenodo page",
+      "dt2_electrical_production_inverter_1_with_faults.csv": "TO FILL from the Zenodo page"},
+    "merged_cache": "data/merged_5min_day.csv: 5-min resampling, inner join, GTI > 50 filter",
+    "split": {"period": ["2021-10-28 12:35 UTC", "2022-05-26 07:40 UTC"], "cut_train": "2022-03-22", "cut_val": "2022-04-28",
+      "train": "10863 obs, 10 incidents", "val": "4219 obs, 4 incidents", "test": "2975 obs, 3 incidents (F3.1)"}
+  },
+  "empreintes_sha256": { "…": "paste here the output of python tests/test_manifeste.py" }
+}
