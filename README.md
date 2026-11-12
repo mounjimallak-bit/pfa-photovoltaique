@@ -86,6 +86,7 @@ flowchart LR
 - The replayer streams historical data; it is not connected to physical sensors.
 - Delivery is at-least-once. Database writes are idempotent (upsert by timestamp); the `alarms` topic can receive a duplicate after a crash between publication and offset commit, identifiable by its key (the measurement timestamp).
 - Kafka runs without a persistent volume: `docker compose down` clears the alarms topic; the database is the system of record.
+- **Sample size.** Three test episodes of one fault sub-type cannot measure a detection rate (95% interval 0.29–1.00). See [Experimental design and sample size](docs/experimental_design.md) for the unit of analysis, the minimal relevant differences and the number of episodes a conclusive study would need.
 ## Quick start
 
 Requirements: Docker, Docker Compose, Python 3.10+.
@@ -148,7 +149,8 @@ delivered weights bit for bit: section 16.7 measures the seed-to-seed variation 
 │   └── db.py             TimescaleDB access
 ├── model_final/          trained models, scalers, reference scores, config.json
 ├── notebooks/final.ipynb full analysis: EDA, ablations, tuning, evaluation
-├── analysis/             read-only diagnostics (knn_vs_ensemble.py: why kNN matches the ensemble)
+├── analysis/             read-only diagnostics (knn_vs_ensemble.py, sample_size.py)
+├── docs/                 experimental design and sample size considerations
 ├── tests/                consumer message handling vs batch scores
 ├── docker/               SQL schema and migrations
 ├── grafana/              provisioned dashboard and datasource
