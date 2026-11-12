@@ -22,8 +22,8 @@
   "data": {
     "source": "Zenodo, record 7358042",
     "raw_files_md5": {
-      "dt1_solar_and_meteorological_measurement.csv": "Thttps://zenodo.org/records/7358042",
-      "dt2_electrical_production_inverter_1_with_faults.csv": "https://zenodo.org/records/7358042"},
+      "dt1_solar_and_meteorological_measurement.csv": "not recorded (see https://zenodo.org/records/7358042)",
+      "dt2_electrical_production_inverter_1_with_faults.csv": "not recorded (see https://zenodo.org/records/7358042)"},
     "merged_cache": "data/merged_5min_day.csv: 5-min resampling, inner join, GTI > 50 filter",
     "split": {"period": ["2021-10-28 12:35 UTC", "2022-05-26 07:40 UTC"], "cut_train": "2022-03-22", "cut_val": "2022-04-28",
       "train": "10863 obs, 10 incidents", "val": "4219 obs, 4 incidents", "test": "2975 obs, 3 incidents (F3.1)"}
