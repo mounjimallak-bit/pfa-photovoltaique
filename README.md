@@ -7,7 +7,7 @@
 ![Grafana](https://img.shields.io/badge/Grafana-10.4-F46800?logo=grafana&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker%20Compose-one%20command-2496ED?logo=docker&logoColor=white)
 
-Detects shading faults on a solar plant **without ever training on a labelled fault**, and scores each new measurement as it arrives, from a Kafka stream to a live Grafana dashboard.
+Detects shading faults on a solar plant by learning **healthy behaviour only** (fault rows are removed from training using the labels, see *Semi-supervised* below), and scores each new measurement as it arrives, from a Kafka stream to a live Grafana dashboard.
 
 **[Read the full case study →](https://mounjimallak-bit.github.io/Portfolio/post/pfa/)**: data exploration, feature selection, model tuning and every decision along the way.
 
@@ -24,7 +24,7 @@ This system learns what a **healthy plant** looks like, and raises an alarm when
 - **Semi-supervised:** the networks are trained on healthy data only, but labels are used beyond the threshold: to remove fault rows from training, to select features, to tune hyperparameters, to choose the fusion and the threshold, and to report results.
 - **Streaming-ready:** each 5-minute measurement is scored on its own, against a frozen reference, so the score is identical offline and in production.
 - **Ensemble of 10 networks:** 5 dense autoencoders + 5 LSTM autoencoders, fused by rank averaging.
-- **Clean evaluation:** chronological split, model selection on validation only, test set opened once at the very end.
+- **Clean evaluation:** chronological split, model selection and threshold on validation only; the deployed system was frozen before the test set was opened. Later analyses (sections 16–17) reuse the test set for comparison only and change nothing in `model_final/`.
 - **Full stack in one command:** Kafka, TimescaleDB, Grafana, Kafka UI and pgAdmin via Docker Compose.
 
 ## Results
@@ -75,9 +75,12 @@ flowchart LR
 ## Limitations
 
 - The test set contains **a single fault sub-type (F3.1)**, absent from development but a near-twin of F3.2, which is in validation. It is three repeats of one staged experiment: 3/3 episodes gives a 95% interval of 0.29–1.00 on the detection rate, and a day-level bootstrap puts test PR-AUC between 0.48 and 0.94.
-- **Simple baselines are competitive.** A 10-nearest-neighbour distance on the six raw sensors scores 0.64 on validation and 0.88 on test (ensemble: 0.72 and 0.78). The ensemble's advantage is not established.
+- **Simple baselines are competitive.** A 10-nearest-neighbour distance on the six raw sensors scores 0.64 on validation and 0.88 on test (ensemble: 0.72 and 0.78). Neither difference is established: ROC-AUC is identical (0.997 vs 0.996), the test PR-AUC gap comes from six healthy early-morning points (removing them gives 0.97 for the ensemble), and a kNN chosen on validation with the ensemble's own rule scores 0.70 on test. Over the 17 incidents, no method differs from kNN. At equal performance, kNN is about 140 times cheaper and needs no training.
+- **Dawn points decide the scores.** The LSTM needs six consecutive points, so the first five points of each day are never scored, by any method in the comparison. These are mostly healthy dawn points with low sun. Scored on all test points, kNN drops from 0.88 to 0.39 and the dense autoencoder alone from 0.75 to 0.34. In the deployed system the LSTM window therefore acts as an implicit dawn mask.
 - **Seasons.** Training covers late spring and summer only. On the 10.5 fault-free months after the study period, the deployed threshold raises about 2.6 false-alarm events a week overall, and 4–11 a week from June to September (austral winter).
 - On validation, recall plateaus around 0.85: beyond it, precision falls to the baseline.
+- **The threshold is the most label-dependent choice.** All 73 test fault points score between 0.88 and 0.969; the deployed threshold (0.946, F2 on validation) sits just below. A label-free rule flagging 2% of unlabelled validation, or a budget of one alarm event per week, detects none of the three test episodes; a budget of two events per week detects all three.
+- **Validation scores are optimistic.** Features, hyperparameters, fusion and threshold were all chosen on the same four validation incidents (over 130 configurations compared), so validation metrics are post-selection estimates. The leave-one-incident-out study (section 17) is the less biased evidence; its April folds share incidents with the selection.
 - Few fault episodes overall (4 in validation, 3 in test), all staged shading, and a single installation: the model must be retrained for another site.
 - The operating point depends on the seeds: retraining with five other seeds moves the threshold and lowers test precision.
 - The replayer streams historical data; it is not connected to physical sensors.
