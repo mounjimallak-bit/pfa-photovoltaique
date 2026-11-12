@@ -1,5 +1,8 @@
 # Photovoltaic Anomaly Detection: Real-Time Predictive Maintenance
 
+[![tests](https://github.com/mounjimallak-bit/pfa-photovoltaique/actions/workflows/tests.yml/badge.svg)](https://github.com/mounjimallak-bit/pfa-photovoltaique/actions/workflows/tests.yml)
+
+
 ![Python](https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-Keras%203-FF6F00?logo=tensorflow&logoColor=white)
 ![Kafka](https://img.shields.io/badge/Apache%20Kafka-streaming-231F20?logo=apachekafka&logoColor=white)
