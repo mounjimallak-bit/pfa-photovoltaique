@@ -1,5 +1,5 @@
-"""Numerical checks of the derivations in the mathematical appendix of the case study
-(portfolio page post/pfa/mathematics.html).
+"""Numerical checks of the mathematical notes of the case study
+(portfolio page post/pfa/index.html, boxes marked "Mathematical note").
 
 Read-only (writes no file). Run from the repository root:
 
