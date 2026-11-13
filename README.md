@@ -72,7 +72,7 @@ flowchart LR
 | Rank against a **frozen reference** distribution | A score computed relative to the current batch looks good offline and is meaningless in production, where the batch is a single point. |
 | **AE + LSTM** fusion | The LSTM was meant to add temporal context; fusing them adds +0.033 PR-AUC on validation, a gap of the order of seed-to-seed noise. On test the LSTM family alone scores 0.27, so the test result is carried by the dense autoencoders. |
 | Isolation Forest **removed** | Kept as a baseline; adding it to the fusion lowered validation PR-AUC (0.723 → 0.687), again within noise on four validation episodes. |
-| Simple rank average over stacking | Weighted and stacked fusions gave < 0.01 gain with a real overfitting risk. |
+| Simple rank average over stacking | Weighted averaging and logistic stacking both learn near-equal weights and gain less than 0.001 PR-AUC on validation (0.7244 and 0.7241 against 0.7234), with parameters fitted on the evaluation data; the rank average needs none. |
 | Threshold on **F2** | Recall matters more than precision for maintenance. |
 
 ## Limitations
