@@ -165,6 +165,11 @@ delivered weights bit for bit: section 16.7 measures the seed-to-seed variation 
 
 Python · TensorFlow / Keras · scikit-learn · pandas · Apache Kafka · PostgreSQL / TimescaleDB · Grafana · Docker Compose
 
+## License
+
+The code is released under the MIT License (see `LICENSE`). The data files in `data/` are
+derived from Zenodo record 7828879 (Graillet et al., 2023) and remain under the terms of that
+record; they are not covered by the MIT License.
 ## Author
 
 **Malak Mounji**, engineering student in Data Science, Big Data & AI at ENSA Agadir. Summer internship (PFA) at Albarray Consulting, July to August 2026.
