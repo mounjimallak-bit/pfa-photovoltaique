@@ -153,7 +153,7 @@ delivered weights bit for bit: section 16.7 measures the seed-to-seed variation 
 │   └── db.py             TimescaleDB access
 ├── model_final/          trained models, scalers, reference scores, config.json
 ├── notebooks/final.ipynb full analysis: EDA, ablations, tuning, evaluation
-├── analysis/             read-only diagnostics (knn_vs_ensemble.py, sample_size.py, control_inverter.py: needs dt3 from Zenodo)
+├── analysis/             read-only diagnostics (knn_vs_ensemble.py, sample_size.py, math_checks.py: numbers of the portfolio's mathematical notes, control_inverter.py: needs dt3 from Zenodo)
 ├── docs/                 experimental design and sample size considerations
 ├── tests/                consumer message handling vs batch scores
 ├── docker/               SQL schema and migrations
