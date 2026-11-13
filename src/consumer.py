@@ -92,12 +92,12 @@ def traiter_message(mesure, offset, tampon, detecteur):
                     raison=f"horodatage invalide ({e})",
                     offset_commit=tampon.offset_a_commiter(offset))
 
-       try:
+    try:
         gti = float(mesure.get("GTI"))
     except (TypeError, ValueError):
         gti = float("nan")  # GTI absent ou non numérique : traité comme une mesure non scorable
-        if pd.isna(gti) or not gti > FILTRE_GTI_MIN:
-            return dict(horodatage=horodatage, score=None, anomalie=None,
+    if pd.isna(gti) or not gti > FILTRE_GTI_MIN:
+        return dict(horodatage=horodatage, score=None, anomalie=None,
                     raison="nuit ou irradiance absente",
                     offset_commit=tampon.offset_a_commiter(offset))
 
