@@ -1,4 +1,4 @@
-# Photovoltaic Anomaly Detection: Real-Time Predictive Maintenance
+# Photovoltaic Fault Detection from Few Labels: Real-Time Anomaly Detection
 
 [![tests](https://github.com/mounjimallak-bit/pfa-photovoltaique/actions/workflows/tests.yml/badge.svg)](https://github.com/mounjimallak-bit/pfa-photovoltaique/actions/workflows/tests.yml)
 

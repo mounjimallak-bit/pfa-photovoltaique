@@ -830,7 +830,7 @@
     ]
   },
   "timezone": "utc",
-  "title": "Maintenance prédictive PV — supervision temps réel",
+  "title": "Détection d'anomalies PV — supervision temps réel",
   "uid": "pfa-photovoltaique",
   "weekStart": ""
 }
